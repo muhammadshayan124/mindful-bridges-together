@@ -8,7 +8,7 @@ import ChildGames from "@/components/child/ChildGames";
 
 const ChildInterface = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 font-quicksand">
       <ChildNavbar />
       <div className="pt-20 px-4 pb-6">
         <Routes>
