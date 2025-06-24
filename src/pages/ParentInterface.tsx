@@ -12,7 +12,7 @@ const ParentInterface = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <ParentSidebar />
-        <main className="flex-1 p-6">
+        <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={<Navigate to="/parent/dashboard" replace />} />
             <Route path="/dashboard" element={<ParentDashboard />} />

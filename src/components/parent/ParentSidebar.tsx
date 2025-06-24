@@ -24,32 +24,44 @@ const ParentSidebar = () => {
   const location = useLocation();
 
   return (
-    <Sidebar className="border-r-2 border-gray-200">
-      <SidebarHeader className="p-6">
-        <Link to="/" className="flex items-center gap-3">
-          <Heart className="w-8 h-8 text-pink-500" />
+    <Sidebar className="border-r border-gray-200 bg-white">
+      <SidebarHeader className="p-6 border-b border-gray-100">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Heart className="w-8 h-8 text-blue-500" />
           <div>
-            <h2 className="text-xl font-bold text-gray-800">MindfulBuddy</h2>
-            <p className="text-sm text-gray-500">Parent Dashboard</p>
+            <h2 className="text-xl font-bold text-gray-800 font-poppins">MindfulBuddy</h2>
+            <p className="text-sm text-gray-500 font-quicksand">Parent Dashboard</p>
           </div>
         </Link>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="px-4 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider font-poppins mb-3">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.url;
                 
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link to={item.url} className="flex items-center gap-3">
-                        <Icon className="w-5 h-5" />
-                        <span>{item.title}</span>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive}
+                      className={`h-12 rounded-lg transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-blue-50 text-blue-700 shadow-sm border-l-4 border-blue-500' 
+                          : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
+                      }`}
+                    >
+                      <Link to={item.url} className="flex items-center gap-3 px-4">
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                        <span className={`font-medium font-quicksand ${isActive ? 'text-blue-700' : ''}`}>
+                          {item.title}
+                        </span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -59,15 +71,20 @@ const ParentSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        <SidebarGroup>
-          <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
+        <SidebarGroup className="mt-8">
+          <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider font-poppins mb-3">
+            Quick Actions
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link to="/" className="flex items-center gap-3 text-blue-600">
+                <SidebarMenuButton 
+                  asChild
+                  className="h-12 rounded-lg hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-all duration-200"
+                >
+                  <Link to="/" className="flex items-center gap-3 px-4">
                     <Home className="w-5 h-5" />
-                    <span>Back to Home</span>
+                    <span className="font-medium font-quicksand">Back to Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
