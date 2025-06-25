@@ -12,6 +12,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { BarChart3, Users, FileText, Settings, Heart, Home } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   { title: "Dashboard", url: "/parent/dashboard", icon: BarChart3 },
@@ -22,15 +23,19 @@ const menuItems = [
 
 const ParentSidebar = () => {
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   return (
-    <Sidebar className="border-r border-gray-200 bg-white">
+    <Sidebar 
+      className="border-r border-gray-200 bg-white"
+      collapsible={isMobile ? "icon" : "none"}
+    >
       <SidebarHeader className="p-6 border-b border-gray-100">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <Heart className="w-8 h-8 text-blue-500" />
-          <div>
-            <h2 className="text-xl font-bold text-gray-800 font-poppins">MindfulBuddy</h2>
-            <p className="text-sm text-gray-500 font-quicksand">Parent Dashboard</p>
+          <Heart className="w-8 h-8 text-blue-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-gray-800 font-poppins truncate">MindfulBuddy</h2>
+            <p className="text-sm text-gray-500 font-quicksand truncate">Parent Dashboard</p>
           </div>
         </Link>
       </SidebarHeader>
@@ -57,9 +62,9 @@ const ParentSidebar = () => {
                           : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
                       }`}
                     >
-                      <Link to={item.url} className="flex items-center gap-3 px-4">
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
-                        <span className={`font-medium font-quicksand ${isActive ? 'text-blue-700' : ''}`}>
+                      <Link to={item.url} className="flex items-center gap-3 px-4 min-w-0">
+                        <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                        <span className={`font-medium font-quicksand truncate ${isActive ? 'text-blue-700' : ''}`}>
                           {item.title}
                         </span>
                       </Link>
@@ -82,9 +87,9 @@ const ParentSidebar = () => {
                   asChild
                   className="h-12 rounded-lg hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-all duration-200"
                 >
-                  <Link to="/" className="flex items-center gap-3 px-4">
-                    <Home className="w-5 h-5" />
-                    <span className="font-medium font-quicksand">Back to Home</span>
+                  <Link to="/" className="flex items-center gap-3 px-4 min-w-0">
+                    <Home className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium font-quicksand truncate">Back to Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
