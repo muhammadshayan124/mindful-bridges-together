@@ -91,10 +91,9 @@ const GratitudeGarden = () => {
                   {flowers.map((flower, index) => (
                     <div
                       key={flower.id}
-                      className="group relative"
+                      className="group relative animate-in fade-in duration-500"
                       style={{
-                        animationDelay: `${index * 0.1}s`,
-                        animation: 'fadeIn 0.5s ease-out forwards'
+                        animationDelay: `${index * 100}ms`,
                       }}
                     >
                       <div
@@ -196,19 +195,6 @@ const GratitudeGarden = () => {
           )}
         </CardContent>
       </Card>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.8);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-      `}</style>
     </div>
   );
 };
