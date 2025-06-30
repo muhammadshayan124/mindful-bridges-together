@@ -11,8 +11,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { BarChart3, Users, FileText, Settings, Heart, Home } from "lucide-react";
+import { BarChart3, Users, FileText, Settings, Heart, Home, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
   { title: "Dashboard", url: "/parent/dashboard", icon: BarChart3 },
@@ -24,6 +25,11 @@ const menuItems = [
 const ParentSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { signOut, profile } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <Sidebar 
@@ -35,7 +41,9 @@ const ParentSidebar = () => {
           <Heart className="w-8 h-8 text-blue-500 flex-shrink-0" />
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-gray-800 font-poppins truncate">MindfulBuddy</h2>
-            <p className="text-sm text-gray-500 font-quicksand truncate">Parent Dashboard</p>
+            <p className="text-sm text-gray-500 font-quicksand truncate">
+              {profile ? `Hi, ${profile.full_name}!` : 'Parent Dashboard'}
+            </p>
           </div>
         </Link>
       </SidebarHeader>
@@ -91,6 +99,17 @@ const ParentSidebar = () => {
                     <Home className="w-5 h-5 flex-shrink-0" />
                     <span className="font-medium font-quicksand truncate">Back to Home</span>
                   </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild
+                  className="h-12 rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-200"
+                >
+                  <button onClick={handleSignOut} className="flex items-center gap-3 px-4 min-w-0 w-full">
+                    <LogOut className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium font-quicksand truncate">Sign Out</span>
+                  </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

@@ -1,8 +1,10 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Heart, MessageCircle, Smile, BookOpen, Gamepad2, Menu } from "lucide-react";
+import { Heart, MessageCircle, Smile, BookOpen, Gamepad2, Menu, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -15,6 +17,7 @@ const ChildNavbar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const { signOut, profile } = useAuth();
   
   const navItems = [
     { path: "/child/chat", label: "Chat", icon: MessageCircle },
@@ -22,6 +25,11 @@ const ChildNavbar = () => {
     { path: "/child/journal", label: "Journal", icon: BookOpen },
     { path: "/child/games", label: "Games", icon: Gamepad2 },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsOpen(false);
+  };
 
   const NavItems = ({ onItemClick }: { onItemClick?: () => void }) => (
     <>
@@ -54,9 +62,16 @@ const ChildNavbar = () => {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3">
             <Heart className="w-8 h-8 text-pink-500 flex-shrink-0" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent font-poppins">
-              MindfulBuddy
-            </span>
+            <div className="min-w-0">
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent font-poppins">
+                MindfulBuddy
+              </span>
+              {profile && (
+                <p className="text-xs text-gray-500 font-quicksand truncate">
+                  Hi, {profile.full_name}!
+                </p>
+              )}
+            </div>
           </Link>
           
           {isMobile ? (
@@ -72,12 +87,28 @@ const ChildNavbar = () => {
                 </SheetHeader>
                 <div className="flex flex-col gap-4 mt-6">
                   <NavItems onItemClick={() => setIsOpen(false)} />
+                  <Button 
+                    onClick={handleSignOut}
+                    variant="outline"
+                    className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>
           ) : (
             <div className="flex items-center gap-2">
               <NavItems />
+              <Button 
+                onClick={handleSignOut}
+                variant="ghost"
+                size="sm"
+                className="ml-4 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           )}
         </div>

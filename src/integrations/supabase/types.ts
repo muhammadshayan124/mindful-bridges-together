@@ -9,7 +9,171 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          id: string
+          is_user: boolean
+          message: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          id?: string
+          is_user?: boolean
+          message: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          id?: string
+          is_user?: boolean
+          message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      children: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          id: string
+          parent_id: string
+          relationship: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          id?: string
+          parent_id: string
+          relationship?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          id?: string
+          parent_id?: string
+          relationship?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "children_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "children_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          child_id: string
+          content: string
+          created_at: string | null
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mood_entries: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          date: string
+          id: string
+          mood: Database["public"]["Enums"]["mood_type"]
+          note: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          mood: Database["public"]["Enums"]["mood_type"]
+          note?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          mood?: Database["public"]["Enums"]["mood_type"]
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mood_entries_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +182,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      mood_type: "very_sad" | "sad" | "neutral" | "happy" | "very_happy"
+      user_role: "parent" | "child"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +298,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      mood_type: ["very_sad", "sad", "neutral", "happy", "very_happy"],
+      user_role: ["parent", "child"],
+    },
   },
 } as const
