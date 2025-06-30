@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Gamepad2, Puzzle, Heart, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const games = [
   {
@@ -11,7 +12,8 @@ const games = [
     icon: Heart,
     color: "from-pink-400 to-red-400",
     difficulty: "Easy",
-    time: "5 min"
+    time: "5 min",
+    route: "/child/games/breathing-buddy"
   },
   {
     id: 2,
@@ -20,7 +22,8 @@ const games = [
     icon: Puzzle,
     color: "from-blue-400 to-purple-400",
     difficulty: "Medium",
-    time: "10 min"
+    time: "10 min",
+    route: "/child/games/emotion-detective"
   },
   {
     id: 3,
@@ -29,7 +32,8 @@ const games = [
     icon: Star,
     color: "from-green-400 to-blue-400",
     difficulty: "Easy",
-    time: "8 min"
+    time: "8 min",
+    route: "/child/games/mindful-maze"
   },
   {
     id: 4,
@@ -38,7 +42,8 @@ const games = [
     icon: Gamepad2,
     color: "from-yellow-400 to-orange-400",
     difficulty: "Medium",
-    time: "15 min"
+    time: "15 min",
+    route: "/child/games/worry-warriors"
   },
   {
     id: 5,
@@ -47,7 +52,8 @@ const games = [
     icon: Heart,
     color: "from-green-400 to-emerald-400",
     difficulty: "Easy",
-    time: "7 min"
+    time: "7 min",
+    route: "/child/games/gratitude-garden"
   },
   {
     id: 6,
@@ -56,14 +62,16 @@ const games = [
     icon: Star,
     color: "from-purple-400 to-pink-400",
     difficulty: "Hard",
-    time: "20 min"
+    time: "20 min",
+    route: "/child/games/coping-castle"
   }
 ];
 
 const ChildGames = () => {
-  const handlePlayGame = (gameId: number) => {
-    console.log("Playing game:", gameId);
-    // Here you would navigate to the actual game
+  const navigate = useNavigate();
+
+  const handlePlayGame = (route: string) => {
+    navigate(route);
   };
 
   return (
@@ -100,7 +108,7 @@ const ChildGames = () => {
                   {game.description}
                 </p>
                 <Button
-                  onClick={() => handlePlayGame(game.id)}
+                  onClick={() => handlePlayGame(game.route)}
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-semibold"
                 >
                   Play Now! 🚀
