@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,41 +10,46 @@ import ChildInterface from "./pages/ChildInterface";
 import ParentInterface from "./pages/ParentInterface";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotFound from "./pages/NotFound";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route 
-              path="/child/*" 
-              element={
-                <ProtectedRoute requiredRole="child">
-                  <ChildInterface />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/parent/*" 
-              element={
-                <ProtectedRoute requiredRole="parent">
-                  <ParentInterface />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <ThemeProvider defaultTheme="system" storageKey="mindful-app-theme">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route 
+                  path="/child/*" 
+                  element={
+                    <ProtectedRoute requiredRole="child">
+                      <ChildInterface />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/parent/*" 
+                  element={
+                    <ProtectedRoute requiredRole="parent">
+                      <ParentInterface />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
 
 export default App;

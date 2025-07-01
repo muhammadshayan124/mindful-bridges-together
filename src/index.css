@@ -9,7 +9,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 216 100% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -18,7 +18,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 197 71% 52%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -35,18 +35,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 197 71% 52%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 216 100% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary: 197 71% 52%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 197 71% 52%;
   }
 
   .dark {
@@ -59,7 +59,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 197 71% 52%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -76,15 +76,16 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 197 71% 52%;
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 197 71% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 197 71% 52%;
   }
 }
 
@@ -94,8 +95,9 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-br from-calm-50 via-lavender-50 to-mint-50 dark:from-serenity-900 dark:via-serenity-800 dark:to-serenity-900 text-foreground min-h-screen;
     font-family: 'Quicksand', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -103,19 +105,19 @@
   }
 }
 
-/* Mood animations */
+/* Enhanced animations for games */
 @keyframes bounce {
   0%, 20%, 53%, 80%, 100% {
     transform: translate3d(0,0,0);
   }
   40%, 43% {
-    transform: translate3d(0, -8px, 0);
+    transform: translate3d(0, -12px, 0);
   }
   70% {
-    transform: translate3d(0, -4px, 0);
+    transform: translate3d(0, -6px, 0);
   }
   90% {
-    transform: translate3d(0, -2px, 0);
+    transform: translate3d(0, -3px, 0);
   }
 }
 
@@ -128,8 +130,24 @@
   }
 }
 
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
 .bounce-animation {
-  animation: bounce 0.6s ease-in-out;
+  animation: bounce 0.8s ease-in-out;
 }
 
 .typing-dot {
@@ -146,4 +164,59 @@
 
 .typing-dot:nth-child(3) {
   animation-delay: 320ms;
+}
+
+.sparkle-animation {
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+.rainbow-animation {
+  animation: rainbow 3s linear infinite;
+}
+
+/* Game card hover effects */
+.game-card {
+  @apply transition-all duration-300 transform hover:scale-105 hover:shadow-2xl;
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+}
+
+.dark .game-card {
+  background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(51,65,85,0.7) 100%);
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(45deg, #38bdf8, #a855f7, #22c55e, #f59e0b);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-card:hover::before {
+  opacity: 1;
+}
+
+/* Interactive elements */
+.interactive-button {
+  @apply relative overflow-hidden transition-all duration-300 transform hover:scale-105 active:scale-95;
+}
+
+.interactive-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.interactive-button:hover::before {
+  left: 100%;
 }
