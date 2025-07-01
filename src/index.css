@@ -1,44 +1,34 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* MindfulBuddy Design System - Semantic Tokens */
 
 @layer base {
   :root {
-    --background: 216 100% 98%;
+    --background: 0 0% 98%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
     --primary: 197 71% 52%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 197 71% 52%;
-
     --radius: 1rem;
-
     --sidebar-background: 216 100% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 197 71% 52%;
@@ -47,37 +37,38 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 197 71% 52%;
+
+    /* MindfulBuddy Semantic Tokens */
+    --mindful-background-light: 247 252 252;
+    --mindful-background-dark: 26 32 44;
+    --mindful-bot-bubble: 190 230 248;
+    --mindful-user-bubble: 254 215 215;
+    --mindful-parent-sidebar: 43 108 176;
+    --mindful-accent: 159 122 234;
+    --mindful-success: 104 211 145;
+    --mindful-warning: 246 173 85;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
     --primary: 197 71% 52%;
     --primary-foreground: 222.2 47.4% 11.2%;
-
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 197 71% 52%;
-    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 197 71% 52%;
@@ -86,6 +77,12 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 197 71% 52%;
+
+    /* Dark mode overrides */
+    --mindful-background-dark: 26 32 44;
+    --mindful-bot-bubble: 43 108 176;
+    --mindful-user-bubble: 155 44 44;
+    --mindful-accent: 99 179 237;
   }
 }
 
@@ -95,187 +92,127 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-calm-50 via-lavender-50/50 to-mint-50/70 dark:from-serenity-900 dark:via-serenity-800/90 dark:to-serenity-900 text-foreground min-h-screen;
+    @apply bg-background text-foreground min-h-screen transition-colors duration-300;
     font-family: 'Quicksand', sans-serif;
-    transition: background-color 0.5s ease, color 0.3s ease;
-    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Child Interface Styling */
+  .child-interface {
+    font-family: 'Quicksand', sans-serif;
+    background: linear-gradient(135deg, #F7FAFC 0%, #E6FFFA 50%, #F0FFF4 100%);
+  }
+
+  .dark .child-interface {
+    background: linear-gradient(135deg, #1A202C 0%, #2D3748 50%, #1A365D 100%);
+  }
+
+  /* Parent Interface Styling */
+  .parent-interface {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #EDF2F7 0%, #F7FAFC 100%);
+  }
+
+  .dark .parent-interface {
+    background: linear-gradient(135deg, #2D3748 0%, #1A365D 100%);
+  }
+
+  /* Chat Bubble Styling */
+  .bot-bubble {
+    background: linear-gradient(135deg, #BEE3F8 0%, #90CDF4 100%);
+    color: #1A365D;
+  }
+
+  .dark .bot-bubble {
+    background: #2B6CB0;
+    color: #F7FAFC;
+  }
+
+  .user-bubble {
+    background: #FED7D7;
+    color: #9B2C2C;
+  }
+
+  .dark .user-bubble {
+    background: #9B2C2C;
+    color: #FED7D7;
+  }
+
+  /* Typing Animation */
+  .typing-dot {
+    animation: typing-bounce 1.4s infinite ease-in-out;
+  }
+
+  .typing-dot:nth-child(1) { animation-delay: 0ms; }
+  .typing-dot:nth-child(2) { animation-delay: 200ms; }
+  .typing-dot:nth-child(3) { animation-delay: 400ms; }
+
+  /* Interactive Elements */
+  .mindful-button {
+    @apply transition-all duration-200 transform hover:scale-105 active:scale-95;
+  }
+
+  .mindful-card {
+    @apply transition-all duration-300 hover:shadow-lg;
+  }
+
+  /* Auth Page Role-based Theming */
+  .auth-child-theme {
+    background: linear-gradient(135deg, #F7FAFC 0%, #E6FFFA 50%, #F0FFF4 100%);
+  }
+
+  .auth-parent-theme {
+    background: linear-gradient(135deg, #EDF2F7 0%, #F7FAFC 100%);
+  }
+
+  .dark .auth-child-theme {
+    background: linear-gradient(135deg, #1A202C 0%, #2D3748 50%, #1A365D 100%);
+  }
+
+  .dark .auth-parent-theme {
+    background: linear-gradient(135deg, #2D3748 0%, #1A365D 100%);
+  }
+
+  /* Accessibility Improvements */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .child-focus {
+    @apply focus-ring focus:ring-mindful-accent;
+  }
+
+  .parent-focus {
+    @apply focus-ring focus:ring-mindful-parent-primary;
   }
 }
 
-/* Enhanced animations for games */
-@keyframes bounce {
-  0%, 20%, 53%, 80%, 100% {
-    transform: translate3d(0,0,0);
+/* Component-specific utilities */
+@layer components {
+  .mindful-input-child {
+    @apply bg-white border-2 border-mindful-bot-bubble-start focus:border-mindful-send-button rounded-2xl px-4 py-3 text-gray-800 placeholder:text-gray-500 transition-all duration-200;
   }
-  40%, 43% {
-    transform: translate3d(0, -12px, 0);
+
+  .dark .mindful-input-child {
+    @apply bg-mindful-dark-input border-mindful-dark-border focus:border-mindful-dark-accent text-mindful-parent-dark-text;
   }
-  70% {
-    transform: translate3d(0, -6px, 0);
+
+  .mindful-input-parent {
+    @apply bg-white border border-mindful-parent-border focus:border-mindful-parent-primary rounded-lg px-3 py-2 text-gray-800 transition-all duration-200;
   }
-  90% {
-    transform: translate3d(0, -3px, 0);
+
+  .dark .mindful-input-parent {
+    @apply bg-mindful-parent-dark-bg border-mindful-dark-border focus:border-mindful-dark-accent text-mindful-parent-dark-text;
   }
-}
 
-@keyframes typing {
-  0%, 60%, 100% {
-    transform: translateY(0);
+  .mindful-button-child {
+    @apply bg-gradient-to-r from-mindful-send-button to-mindful-accent text-white rounded-2xl px-6 py-3 font-semibold shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105 active:scale-95;
   }
-  30% {
-    transform: translateY(-10px);
+
+  .mindful-button-parent {
+    @apply bg-mindful-parent-primary text-white rounded-lg px-4 py-2 font-medium transition-all duration-200 hover:bg-blue-600 hover:scale-105 active:scale-95;
   }
-}
-
-@keyframes sparkle {
-  0%, 100% {
-    opacity: 0;
-    transform: scale(0);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes rainbow {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
-@keyframes gradient-x {
-  0%, 100% {
-    transform: translateX(0%);
-  }
-  50% {
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes gradient-y {
-  0%, 100% {
-    transform: translateY(0%);
-  }
-  50% {
-    transform: translateY(-100%);
-  }
-}
-
-.bounce-animation {
-  animation: bounce 0.8s ease-in-out;
-}
-
-.typing-dot {
-  animation: typing 1.4s infinite ease-in-out;
-}
-
-.typing-dot:nth-child(1) {
-  animation-delay: 0ms;
-}
-
-.typing-dot:nth-child(2) {
-  animation-delay: 160ms;
-}
-
-.typing-dot:nth-child(3) {
-  animation-delay: 320ms;
-}
-
-.sparkle-animation {
-  animation: sparkle 1.5s ease-in-out infinite;
-}
-
-.rainbow-animation {
-  animation: rainbow 3s linear infinite;
-}
-
-.animate-gradient-x {
-  animation: gradient-x 15s ease infinite;
-  background-size: 200% 200%;
-}
-
-.animate-gradient-y {
-  animation: gradient-y 15s ease infinite;
-  background-size: 200% 200%;
-}
-
-/* Game card hover effects */
-.game-card {
-  @apply transition-all duration-300 transform hover:scale-105 hover:shadow-2xl;
-  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
-  backdrop-filter: blur(10px);
-}
-
-.dark .game-card {
-  background: linear-gradient(135deg, rgba(30,41,59,0.95) 0%, rgba(51,65,85,0.85) 100%);
-  backdrop-filter: blur(10px);
-}
-
-.game-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 2px;
-  background: linear-gradient(45deg, #38bdf8, #a855f7, #22c55e, #f59e0b);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.game-card:hover::before {
-  opacity: 1;
-}
-
-/* Interactive elements */
-.interactive-button {
-  @apply relative overflow-hidden transition-all duration-300 transform hover:scale-105 active:scale-95;
-}
-
-.interactive-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s;
-}
-
-.interactive-button:hover::before {
-  left: 100%;
-}
-
-/* Enhanced navbar styling */
-.child-navbar {
-  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.90) 100%);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-}
-
-.dark .child-navbar {
-  background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.90) 100%);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-}
-
-/* Improved dropdown styling */
-.dropdown-content {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.dark .dropdown-content {
-  background: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }

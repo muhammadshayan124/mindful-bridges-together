@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Users, UserCircle } from "lucide-react";
+import { Heart, Users, UserCircle, Sparkles, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type UserRole = 'parent' | 'child';
 type AuthMode = 'signin' | 'signup';
@@ -42,7 +43,7 @@ const AuthPage = () => {
         if (error) throw error;
         
         toast({
-          title: "Success!",
+          title: "Welcome to MindfulBuddy! ✨",
           description: "Account created successfully. Please check your email to verify your account."
         });
       } else {
@@ -50,7 +51,7 @@ const AuthPage = () => {
         if (error) throw error;
         
         toast({
-          title: "Welcome back!",
+          title: "Welcome back! 💙",
           description: "You have been signed in successfully."
         });
       }
@@ -65,124 +66,169 @@ const AuthPage = () => {
     }
   };
 
+  const getRoleThemeClass = () => {
+    return role === 'child' ? 'auth-child-theme' : 'auth-parent-theme';
+  };
+
+  const getRoleGradient = () => {
+    if (role === 'child') {
+      return 'from-mindful-accent via-mindful-send-button to-mindful-mint';
+    }
+    return 'from-mindful-parent-primary via-mindful-parent-sidebar to-mindful-success';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className={`min-h-screen ${getRoleThemeClass()} flex items-center justify-center p-4 transition-all duration-500`}>
+      {/* Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
+      <div className="max-w-md w-full animate-fade-in-up">
+        {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="flex justify-center items-center gap-3 mb-6">
-            <Heart className="w-10 h-10 text-pink-500" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent font-poppins">
+          <Link to="/" className="flex justify-center items-center gap-3 mb-6 group">
+            <Heart className="w-12 h-12 text-pink-500 animate-gentle-pulse group-hover:scale-110 transition-transform duration-300" />
+            <h1 className={`text-4xl font-bold bg-gradient-to-r ${getRoleGradient()} bg-clip-text text-transparent font-inter`}>
               MindfulBuddy
             </h1>
           </Link>
-          <p className="text-gray-600 font-quicksand">
-            {mode === 'signin' ? 'Welcome back!' : 'Join our caring community'}
+          <p className={`text-lg font-quicksand ${role === 'child' ? 'text-purple-600 dark:text-purple-300' : 'text-gray-600 dark:text-gray-300'}`}>
+            {mode === 'signin' ? 'Welcome back to your safe space!' : 'Join our caring community'}
           </p>
         </div>
 
-        <Card className="shadow-xl border-2 border-blue-100">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
+        {/* Role Selection */}
+        <div className="mb-8">
+          <div className="flex bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-2 border-2 border-white/50 dark:border-gray-700/50 shadow-lg">
+            <button
+              type="button"
+              onClick={() => setRole('child')}
+              className={`flex-1 py-4 px-6 rounded-xl font-semibold font-quicksand transition-all duration-300 flex items-center justify-center gap-3 ${
+                role === 'child'
+                  ? 'bg-gradient-to-r from-mindful-accent to-mindful-send-button text-white shadow-lg scale-105'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+              }`}
+            >
+              <Sparkles className="w-5 h-5" />
+              Child
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('parent')}
+              className={`flex-1 py-4 px-6 rounded-xl font-semibold font-inter transition-all duration-300 flex items-center justify-center gap-3 ${
+                role === 'parent'
+                  ? 'bg-gradient-to-r from-mindful-parent-primary to-mindful-parent-sidebar text-white shadow-lg scale-105'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+              }`}
+            >
+              <Shield className="w-5 h-5" />
+              Parent
+            </button>
+          </div>
+        </div>
+
+        {/* Auth Card */}
+        <Card className="shadow-2xl border-2 border-white/50 dark:border-gray-700/50 backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 animate-scale-in">
+          <CardHeader className="text-center pb-6">
+            <div className="flex justify-center mb-6">
               {role === 'parent' ? (
-                <Users className="w-12 h-12 text-green-500" />
+                <div className="w-16 h-16 bg-gradient-to-r from-mindful-parent-primary to-mindful-success rounded-2xl flex items-center justify-center shadow-lg">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
               ) : (
-                <UserCircle className="w-12 h-12 text-blue-500" />
+                <div className="w-16 h-16 bg-gradient-to-r from-mindful-accent to-mindful-mint rounded-2xl flex items-center justify-center shadow-lg">
+                  <UserCircle className="w-8 h-8 text-white" />
+                </div>
               )}
             </div>
-            <CardTitle className="text-2xl font-bold font-poppins">
+            <CardTitle className={`text-3xl font-bold ${role === 'child' ? 'font-quicksand' : 'font-inter'}`}>
               {mode === 'signin' ? 'Sign In' : 'Create Account'}
             </CardTitle>
-            <CardDescription className="font-quicksand">
+            <CardDescription className={`text-lg ${role === 'child' ? 'font-quicksand' : 'font-inter'}`}>
               {mode === 'signin' 
-                ? `Sign in to your ${role} account` 
-                : `Create a new ${role} account`
+                ? `Welcome back to your ${role === 'child' ? 'safe space' : 'dashboard'}` 
+                : `Create your ${role === 'child' ? 'magical' : 'secure'} ${role} account`
               }
             </CardDescription>
           </CardHeader>
           
-          <CardContent>
-            <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-              <button
-                type="button"
-                onClick={() => setRole('child')}
-                className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
-                  role === 'child'
-                    ? 'bg-blue-500 text-white shadow-md'
-                    : 'text-gray-600 hover:text-blue-600'
-                }`}
-              >
-                Child
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('parent')}
-                className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
-                  role === 'parent'
-                    ? 'bg-green-500 text-white shadow-md'
-                    : 'text-gray-600 hover:text-green-600'
-                }`}
-              >
-                Parent
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {mode === 'signup' && (
-                <div>
-                  <Label htmlFor="fullName">Full Name</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className={`text-sm font-medium ${role === 'child' ? 'font-quicksand' : 'font-inter'}`}>
+                    Full Name
+                  </Label>
                   <Input
                     id="fullName"
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Enter your full name"
+                    className={`${role === 'child' ? 'mindful-input-child' : 'mindful-input-parent'} child-focus`}
                     required
                   />
                 </div>
               )}
               
-              <div>
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email" className={`text-sm font-medium ${role === 'child' ? 'font-quicksand' : 'font-inter'}`}>
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
+                  className={`${role === 'child' ? 'mindful-input-child' : 'mindful-input-parent'} child-focus`}
                   required
                 />
               </div>
               
-              <div>
-                <Label htmlFor="password">Password</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className={`text-sm font-medium ${role === 'child' ? 'font-quicksand' : 'font-inter'}`}>
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
+                  className={`${role === 'child' ? 'mindful-input-child' : 'mindful-input-parent'} child-focus`}
                   required
                 />
               </div>
 
               <Button
                 type="submit"
-                className={`w-full py-3 font-semibold ${
-                  role === 'parent' 
-                    ? 'bg-green-500 hover:bg-green-600' 
-                    : 'bg-blue-500 hover:bg-blue-600'
+                className={`w-full py-4 font-semibold text-lg ${
+                  role === 'child' ? 'mindful-button-child font-quicksand' : 'mindful-button-parent font-inter'
                 }`}
                 disabled={loading}
               >
-                {loading ? 'Please wait...' : (mode === 'signin' ? 'Sign In' : 'Create Account')}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Please wait...
+                  </span>
+                ) : (
+                  mode === 'signin' ? 'Sign In' : 'Create Account'
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 type="button"
                 onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-                className="text-sm text-gray-600 hover:text-gray-800 font-quicksand"
+                className={`text-sm transition-colors duration-200 ${
+                  role === 'child' 
+                    ? 'text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 font-quicksand' 
+                    : 'text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-inter'
+                }`}
               >
                 {mode === 'signin' 
                   ? "Don't have an account? Sign up" 
@@ -192,6 +238,16 @@ const AuthPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Footer Message */}
+        <div className="text-center mt-8">
+          <p className={`text-sm opacity-75 ${role === 'child' ? 'font-quicksand text-purple-600 dark:text-purple-300' : 'font-inter text-gray-600 dark:text-gray-300'}`}>
+            {role === 'child' 
+              ? '✨ A safe space where your feelings matter ✨' 
+              : '🛡️ Trusted support for your family\'s mental wellness 🛡️'
+            }
+          </p>
+        </div>
       </div>
     </div>
   );

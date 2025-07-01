@@ -1,29 +1,54 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, Bot, User, Heart } from "lucide-react";
+import { Send, Bot, User, Heart, Sparkles } from "lucide-react";
 
 const mockMessages = [
-  { id: 1, type: "bot", message: "Hi there! I'm your AI buddy. How are you feeling today? 😊", timestamp: "2 minutes ago" },
-  { id: 2, type: "user", message: "I'm feeling a bit worried about school tomorrow", timestamp: "2 minutes ago" },
-  { id: 3, type: "bot", message: "I understand that feeling worried about school is normal. What specifically is making you feel worried? Is it a test, friends, or something else?", timestamp: "1 minute ago" },
-  { id: 4, type: "user", message: "I have a math test and I'm not good at math", timestamp: "1 minute ago" },
-  { id: 5, type: "bot", message: "It sounds like you're feeling anxious about the math test. That's completely understandable! Remember, it's okay not to be perfect at everything. What have you done to prepare for the test so far? 📚✨", timestamp: "30 seconds ago" },
+  { 
+    id: 1, 
+    type: "bot", 
+    message: "Hi there! I'm your AI buddy. 🌟 How are you feeling today?", 
+    timestamp: "2 minutes ago" 
+  },
+  { 
+    id: 2, 
+    type: "user", 
+    message: "I'm feeling a bit worried about school tomorrow", 
+    timestamp: "2 minutes ago" 
+  },
+  { 
+    id: 3, 
+    type: "bot", 
+    message: "I understand that feeling worried about school is completely normal. 💙 What specifically is making you feel worried? Is it a test, friends, or something else?", 
+    timestamp: "1 minute ago" 
+  },
+  { 
+    id: 4, 
+    type: "user", 
+    message: "I have a math test and I'm not good at math", 
+    timestamp: "1 minute ago" 
+  },
+  { 
+    id: 5, 
+    type: "bot", 
+    message: "It sounds like you're feeling anxious about the math test. That's completely understandable! 🌈 Remember, it's okay not to be perfect at everything. What have you done to prepare for the test so far? ✨", 
+    timestamp: "30 seconds ago" 
+  },
 ];
 
 const TypingIndicator = () => {
   return (
-    <div className="flex gap-3 justify-start mb-4">
-      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+    <div className="flex gap-4 justify-start mb-6 animate-fade-in-up">
+      <div className="w-12 h-12 bg-gradient-to-br from-mindful-accent to-mindful-send-button rounded-full flex items-center justify-center shadow-lg animate-gentle-pulse">
         <Bot className="w-6 h-6 text-white" />
       </div>
-      <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-6 py-4 rounded-3xl rounded-bl-lg max-w-xs shadow-sm">
-        <div className="flex space-x-1">
-          <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
-          <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
-          <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+      <div className="bot-bubble px-6 py-4 rounded-3xl rounded-bl-lg max-w-xs shadow-lg">
+        <div className="flex space-x-2">
+          <div className="w-2 h-2 bg-current rounded-full typing-dot opacity-60"></div>
+          <div className="w-2 h-2 bg-current rounded-full typing-dot opacity-60"></div>
+          <div className="w-2 h-2 bg-current rounded-full typing-dot opacity-60"></div>
         </div>
       </div>
     </div>
@@ -34,6 +59,15 @@ const ChildChat = () => {
   const [messages, setMessages] = useState(mockMessages);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
@@ -56,7 +90,9 @@ const ChildChat = () => {
         "Thank you for sharing that with me. How does talking about it make you feel? 💙",
         "I'm here to listen and support you. What would help you feel better right now? 🌟",
         "That sounds important to you. Tell me more about how you're handling this. ✨",
-        "I understand. Remember, you're doing great by talking about your feelings! 🌈"
+        "I understand. Remember, you're doing great by talking about your feelings! 🌈",
+        "That's really brave of you to share. What else is on your mind today? 💜",
+        "I can hear that this matters to you. How can we work through this together? 🤗"
       ];
       
       const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
@@ -79,39 +115,46 @@ const ChildChat = () => {
 
   return (
     <div className="max-w-4xl mx-auto font-quicksand">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-blue-700 mb-3 font-poppins">
-          Chat with Your AI Buddy 🤖
-        </h1>
-        <p className="text-lg text-blue-600 font-medium">
-          Share your thoughts and feelings in a safe, caring space
+      {/* Header */}
+      <div className="mb-8 text-center animate-fade-in-up">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <Sparkles className="w-8 h-8 text-mindful-accent animate-gentle-pulse" />
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-mindful-accent via-mindful-send-button to-mindful-mint bg-clip-text text-transparent font-quicksand">
+            Chat with Your AI Buddy
+          </h1>
+          <Bot className="w-8 h-8 text-mindful-send-button animate-gentle-pulse" />
+        </div>
+        <p className="text-xl text-purple-600 dark:text-purple-300 font-medium">
+          Share your thoughts and feelings in a safe, caring space 💙
         </p>
       </div>
       
-      <Card className="bg-gradient-to-br from-blue-50 via-purple-50 to-green-50 backdrop-blur-sm border-2 border-blue-200 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="h-[500px] overflow-y-auto p-8 space-y-6 bg-gradient-to-b from-white/30 to-white/10">
+      {/* Chat Container */}
+      <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
+        {/* Chat Messages */}
+        <div className="h-[600px] overflow-y-auto p-8 space-y-6 bg-gradient-to-b from-white/30 to-transparent dark:from-gray-800/30">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex gap-4 ${msg.type === "user" ? "justify-end" : "justify-start"} animate-in slide-in-from-bottom-2 duration-300`}
+              className={`flex gap-4 ${msg.type === "user" ? "justify-end" : "justify-start"} animate-fade-in-up`}
             >
               {msg.type === "bot" && (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-mindful-accent to-mindful-send-button rounded-full flex items-center justify-center shadow-lg flex-shrink-0 animate-gentle-pulse">
                   <Bot className="w-6 h-6 text-white" />
                 </div>
               )}
               
               <div className="flex flex-col max-w-sm lg:max-w-md">
                 <div
-                  className={`px-6 py-4 rounded-3xl shadow-lg ${
+                  className={`px-6 py-4 rounded-3xl shadow-lg transition-all duration-300 hover:shadow-xl ${
                     msg.type === "user"
-                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-lg"
-                      : "bg-gradient-to-r from-white to-gray-50 text-gray-800 rounded-bl-lg border border-gray-200"
+                      ? "user-bubble rounded-br-lg"
+                      : "bot-bubble rounded-bl-lg"
                   }`}
                 >
                   <p className="text-sm leading-relaxed font-medium">{msg.message}</p>
                 </div>
-                <span className={`text-xs text-gray-500 mt-2 font-medium ${
+                <span className={`text-xs mt-2 font-medium opacity-60 ${
                   msg.type === "user" ? "text-right" : "text-left"
                 }`}>
                   {msg.timestamp}
@@ -119,7 +162,7 @@ const ChildChat = () => {
               </div>
               
               {msg.type === "user" && (
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-mindful-mint to-emerald-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
                   <User className="w-6 h-6 text-white" />
                 </div>
               )}
@@ -127,9 +170,11 @@ const ChildChat = () => {
           ))}
           
           {isTyping && <TypingIndicator />}
+          <div ref={messagesEndRef} />
         </div>
         
-        <div className="p-6 border-t bg-gradient-to-r from-white/80 to-blue-50/80 backdrop-blur-sm">
+        {/* Input Area */}
+        <div className="p-8 border-t bg-gradient-to-r from-white/90 to-blue-50/90 dark:from-gray-800/90 dark:to-gray-700/90 backdrop-blur-sm">
           <div className="flex gap-4 items-end">
             <div className="flex-1 relative">
               <Input
@@ -137,27 +182,30 @@ const ChildChat = () => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="w-full rounded-2xl border-2 border-blue-200 focus:border-blue-400 bg-white/90 backdrop-blur-sm py-4 px-6 text-base font-medium placeholder:text-gray-500 transition-all duration-200"
+                className="mindful-input-child child-focus text-base font-medium placeholder:text-gray-400 pr-12"
                 disabled={isTyping}
               />
               {newMessage && (
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <Heart className="w-4 h-4 text-pink-400" />
+                  <Heart className="w-5 h-5 text-pink-400 animate-gentle-pulse" />
                 </div>
               )}
             </div>
             <Button
               onClick={handleSendMessage}
               disabled={isTyping || !newMessage.trim()}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-2xl w-14 h-14 p-0 shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mindful-button-child w-16 h-16 p-0 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed group"
             >
-              <Send className="w-6 h-6 text-white" />
+              <Send className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-200" />
             </Button>
           </div>
           
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600 font-medium">
-              💝 Remember: You're safe here, and your feelings matter
+          {/* Footer Message */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-purple-600 dark:text-purple-300 font-medium flex items-center justify-center gap-2">
+              <Heart className="w-4 h-4 text-pink-400" />
+              Remember: You're safe here, and your feelings matter
+              <Sparkles className="w-4 h-4 text-mindful-accent" />
             </p>
           </div>
         </div>

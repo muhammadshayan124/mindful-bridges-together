@@ -14,16 +14,18 @@ import CopingCastle from "@/components/child/games/CopingCastle";
 
 const ChildInterface = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-calm-50/80 via-lavender-50/60 to-mint-50/80 dark:from-serenity-900/90 dark:via-serenity-800/80 dark:to-serenity-900/90 font-quicksand animate-gradient-y">
+    <div className="min-h-screen child-interface font-quicksand animate-fade-in-up">
       {/* Decorative background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-calm-200/20 to-lavender-200/20 dark:from-calm-700/10 dark:to-lavender-700/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gradient-to-r from-mint-200/20 to-peach-200/20 dark:from-mint-700/10 dark:to-peach-700/10 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-gradient-to-r from-lavender-200/20 to-mint-200/20 dark:from-lavender-700/10 dark:to-mint-700/10 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}}></div>
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-gradient-to-r from-mindful-accent/10 to-mindful-send-button/10 rounded-full blur-3xl animate-gentle-pulse"></div>
+        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gradient-to-r from-mindful-mint/10 to-emerald-400/10 rounded-full blur-3xl animate-gentle-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 w-56 h-56 bg-gradient-to-r from-mindful-send-button/10 to-mindful-mint/10 rounded-full blur-3xl animate-gentle-pulse" style={{animationDelay: '4s'}}></div>
+        <div className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-r from-pink-300/20 to-purple-300/20 rounded-full blur-2xl animate-gentle-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-20 left-20 w-40 h-40 bg-gradient-to-r from-blue-300/20 to-green-300/20 rounded-full blur-2xl animate-gentle-pulse" style={{animationDelay: '3s'}}></div>
       </div>
       
       <ChildNavbar />
-      <div className="pt-20 px-4 pb-6 relative z-10">
+      <div className="pt-24 px-4 pb-8 relative z-10">
         <Routes>
           <Route path="/" element={<Navigate to="/child/chat" replace />} />
           <Route path="/chat" element={<ChildChat />} />
