@@ -21,20 +21,22 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-mindful-background-light dark:bg-mindful-background-dark">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mindful-accent mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300 font-quicksand">Loading your safe space...</p>
         </div>
       </div>
     );
   }
 
   if (!user || !profile) {
+    console.log('No user or profile, redirecting to auth');
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   if (requiredRole && profile.role !== requiredRole) {
+    console.log('Role mismatch, redirecting based on actual role');
     // Redirect to appropriate interface based on user's role
     const redirectPath = profile.role === 'parent' ? '/parent' : '/child';
     return <Navigate to={redirectPath} replace />;

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Heart, Users, UserCircle, Sparkles, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 type UserRole = 'parent' | 'child';
@@ -21,11 +21,27 @@ const AuthPage = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  // Redirect if already authenticated
+  if (user && !authLoading) {
+    const redirectPath = user.user_metadata?.role === 'parent' ? '/parent' : '/child';
+    return <Navigate to={redirectPath} replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -36,11 +52,15 @@ const AuthPage = () => {
             description: "Please enter your full name",
             variant: "destructive"
           });
+          setLoading(false);
           return;
         }
         
         const { error } = await signUp(email, password, role, fullName);
-        if (error) throw error;
+        if (error) {
+          console.error('Sign up error:', error);
+          throw error;
+        }
         
         toast({
           title: "Welcome to MindfulBuddy! ✨",
@@ -48,7 +68,10 @@ const AuthPage = () => {
         });
       } else {
         const { error } = await signIn(email, password);
-        if (error) throw error;
+        if (error) {
+          console.error('Sign in error:', error);
+          throw error;
+        }
         
         toast({
           title: "Welcome back! 💙",
@@ -56,9 +79,10 @@ const AuthPage = () => {
         });
       }
     } catch (error: any) {
+      console.error('Authentication error:', error);
       toast({
-        title: "Error",
-        description: error.message || "An error occurred during authentication",
+        title: "Authentication Error",
+        description: error.message || "An error occurred during authentication. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -76,6 +100,17 @@ const AuthPage = () => {
     }
     return 'from-mindful-parent-primary via-mindful-parent-sidebar to-mindful-success';
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${getRoleThemeClass()} flex items-center justify-center p-4 transition-all duration-500`}>
@@ -199,6 +234,7 @@ const AuthPage = () => {
                   placeholder="Enter your password"
                   className={`${role === 'child' ? 'mindful-input-child' : 'mindful-input-parent'} child-focus`}
                   required
+                  minLength={6}
                 />
               </div>
 
@@ -207,7 +243,7 @@ const AuthPage = () => {
                 className={`w-full py-4 font-semibold text-lg ${
                   role === 'child' ? 'mindful-button-child font-quicksand' : 'mindful-button-parent font-inter'
                 }`}
-                disabled={loading}
+                disabled={loading || authLoading}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -229,6 +265,7 @@ const AuthPage = () => {
                     ? 'text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 font-quicksand' 
                     : 'text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-inter'
                 }`}
+                disabled={loading || authLoading}
               >
                 {mode === 'signin' 
                   ? "Don't have an account? Sign up" 
