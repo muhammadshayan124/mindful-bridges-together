@@ -14,9 +14,16 @@ import CopingCastle from "@/components/child/games/CopingCastle";
 
 const ChildInterface = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 font-quicksand">
+    <div className="min-h-screen bg-gradient-to-br from-calm-50/80 via-lavender-50/60 to-mint-50/80 dark:from-serenity-900/90 dark:via-serenity-800/80 dark:to-serenity-900/90 font-quicksand animate-gradient-y">
+      {/* Decorative background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-calm-200/20 to-lavender-200/20 dark:from-calm-700/10 dark:to-lavender-700/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gradient-to-r from-mint-200/20 to-peach-200/20 dark:from-mint-700/10 dark:to-peach-700/10 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-gradient-to-r from-lavender-200/20 to-mint-200/20 dark:from-lavender-700/10 dark:to-mint-700/10 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}}></div>
+      </div>
+      
       <ChildNavbar />
-      <div className="pt-20 px-4 pb-6">
+      <div className="pt-20 px-4 pb-6 relative z-10">
         <Routes>
           <Route path="/" element={<Navigate to="/child/chat" replace />} />
           <Route path="/chat" element={<ChildChat />} />

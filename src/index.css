@@ -95,9 +95,10 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-calm-50 via-lavender-50 to-mint-50 dark:from-serenity-900 dark:via-serenity-800 dark:to-serenity-900 text-foreground min-h-screen;
+    @apply bg-gradient-to-br from-calm-50 via-lavender-50/50 to-mint-50/70 dark:from-serenity-900 dark:via-serenity-800/90 dark:to-serenity-900 text-foreground min-h-screen;
     font-family: 'Quicksand', sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.5s ease, color 0.3s ease;
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -146,6 +147,24 @@
   100% { filter: hue-rotate(360deg); }
 }
 
+@keyframes gradient-x {
+  0%, 100% {
+    transform: translateX(0%);
+  }
+  50% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes gradient-y {
+  0%, 100% {
+    transform: translateY(0%);
+  }
+  50% {
+    transform: translateY(-100%);
+  }
+}
+
 .bounce-animation {
   animation: bounce 0.8s ease-in-out;
 }
@@ -174,14 +193,26 @@
   animation: rainbow 3s linear infinite;
 }
 
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+  background-size: 200% 200%;
+}
+
+.animate-gradient-y {
+  animation: gradient-y 15s ease infinite;
+  background-size: 200% 200%;
+}
+
 /* Game card hover effects */
 .game-card {
   @apply transition-all duration-300 transform hover:scale-105 hover:shadow-2xl;
-  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+  backdrop-filter: blur(10px);
 }
 
 .dark .game-card {
-  background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(51,65,85,0.7) 100%);
+  background: linear-gradient(135deg, rgba(30,41,59,0.95) 0%, rgba(51,65,85,0.85) 100%);
+  backdrop-filter: blur(10px);
 }
 
 .game-card::before {
@@ -219,4 +250,32 @@
 
 .interactive-button:hover::before {
   left: 100%;
+}
+
+/* Enhanced navbar styling */
+.child-navbar {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.90) 100%);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.dark .child-navbar {
+  background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.90) 100%);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+/* Improved dropdown styling */
+.dropdown-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .dropdown-content {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
