@@ -21,12 +21,12 @@ const AuthPage = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp, user, loading: authLoading } = useAuth();
+  const { signIn, signUp, user, profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  // Redirect if already authenticated
-  if (user && !authLoading) {
-    const redirectPath = user.user_metadata?.role === 'parent' ? '/parent' : '/child';
+  // Redirect if already authenticated and profile is loaded
+  if (user && profile && !authLoading) {
+    const redirectPath = profile.role === 'parent' ? '/parent' : '/child';
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -42,47 +42,45 @@ const AuthPage = () => {
       return;
     }
 
+    if (mode === 'signup' && !fullName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your full name",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      let result;
       if (mode === 'signup') {
-        if (!fullName.trim()) {
-          toast({
-            title: "Error",
-            description: "Please enter your full name",
-            variant: "destructive"
-          });
-          setLoading(false);
-          return;
-        }
-        
-        const { error } = await signUp(email, password, role, fullName);
-        if (error) {
-          console.error('Sign up error:', error);
-          throw error;
-        }
-        
+        result = await signUp(email, password, role, fullName);
+      } else {
+        result = await signIn(email, password);
+      }
+      
+      if (result.error) {
+        console.error('Authentication error:', result.error);
         toast({
-          title: "Welcome to MindfulBuddy! ✨",
-          description: "Account created successfully. Please check your email to verify your account."
+          title: "Authentication Error",
+          description: result.error.message || "An error occurred during authentication. Please try again.",
+          variant: "destructive"
         });
       } else {
-        const { error } = await signIn(email, password);
-        if (error) {
-          console.error('Sign in error:', error);
-          throw error;
-        }
-        
         toast({
-          title: "Welcome back! 💙",
-          description: "You have been signed in successfully."
+          title: mode === 'signup' ? "Welcome to MindfulBuddy! ✨" : "Welcome back! 💙",
+          description: mode === 'signup' 
+            ? "Account created successfully. Please check your email to verify your account."
+            : "You have been signed in successfully."
         });
       }
     } catch (error: any) {
-      console.error('Authentication error:', error);
+      console.error('Authentication exception:', error);
       toast({
         title: "Authentication Error",
-        description: error.message || "An error occurred during authentication. Please try again.",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -101,7 +99,8 @@ const AuthPage = () => {
     return 'from-mindful-parent-primary via-mindful-parent-sidebar to-mindful-success';
   };
 
-  if (authLoading) {
+  // Show loading state while auth is being determined
+  if (authLoading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
