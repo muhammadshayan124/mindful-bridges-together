@@ -1,128 +1,321 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { BookOpen, Save, Sparkles, Edit3 } from "lucide-react";
+import { ThemeToggle } from "../ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
-const journalEntries = [
-  {
-    id: 1,
-    date: "Today",
-    title: "My School Day",
-    preview: "Today was pretty good. I had math class and it wasn't as scary as I thought...",
-    mood: "😊"
-  },
-  {
-    id: 2,
-    date: "Yesterday",
-    title: "Playing with Friends",
-    preview: "Me and my best friend played in the park after school. We had so much fun...",
-    mood: "😄"
-  },
-  {
-    id: 3,
-    date: "2 days ago",
-    title: "Feeling Worried",
-    preview: "I was worried about the test but talking to mom helped me feel better...",
-    mood: "😐"
-  },
+const prompts = [
+  "What made you smile today? 😊",
+  "Tell me about someone who was kind to you today 💝",
+  "What's something new you learned? 🌟",
+  "Describe your favorite moment from today 🌈",
+  "What are you grateful for right now? 🙏",
+  "If today was a color, what would it be and why? 🎨",
+  "What would you like to do tomorrow? ✨"
 ];
 
-const ChildJournal = () => {
-  const [journalText, setJournalText] = useState("");
-  const [entryTitle, setEntryTitle] = useState("");
+interface JournalEntry {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
 
-  const handleSaveEntry = () => {
-    if (!journalText.trim()) return;
-    console.log("Journal entry saved:", { title: entryTitle, content: journalText });
-    setJournalText("");
-    setEntryTitle("");
+const ChildJournal = () => {
+  const [journalEntry, setJournalEntry] = useState("");
+  const [journalTitle, setJournalTitle] = useState("");
+  const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      loadEntries();
+    }
+  }, [user]);
+
+  const loadEntries = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('child_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setEntries(data || []);
+    } catch (error) {
+      console.error('Error loading entries:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load journal entries",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePromptSelect = (prompt: string) => {
+    setSelectedPrompt(prompt);
+    setJournalEntry(`${prompt}\n\n`);
+    setJournalTitle(prompt.split('?')[0] + "?");
+  };
+
+  const saveEntry = async () => {
+    if (!user || !journalEntry.trim() || !journalTitle.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please add both a title and some content to your journal entry",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      if (editingEntry) {
+        // Update existing entry
+        const { error } = await supabase
+          .from('journal_entries')
+          .update({
+            title: journalTitle,
+            content: journalEntry,
+          })
+          .eq('id', editingEntry.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Entry updated! ✏️",
+          description: "Your journal entry has been saved",
+        });
+      } else {
+        // Create new entry
+        const { error } = await supabase
+          .from('journal_entries')
+          .insert({
+            child_id: user.id,
+            title: journalTitle,
+            content: journalEntry,
+          });
+
+        if (error) throw error;
+        
+        toast({
+          title: "Entry saved! 📖",
+          description: "Your journal entry has been saved",
+        });
+      }
+
+      // Reset form
+      setJournalEntry("");
+      setJournalTitle("");
+      setSelectedPrompt(null);
+      setEditingEntry(null);
+      
+      // Reload entries
+      loadEntries();
+    } catch (error) {
+      console.error('Error saving entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save journal entry",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const editEntry = (entry: JournalEntry) => {
+    setEditingEntry(entry);
+    setJournalTitle(entry.title);
+    setJournalEntry(entry.content);
+    setSelectedPrompt(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingEntry(null);
+    setJournalTitle("");
+    setJournalEntry("");
+    setSelectedPrompt(null);
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold text-blue-700 mb-2">Your Personal Journal 📝</h1>
-        <p className="text-blue-600">Write about your day, feelings, and thoughts</p>
+    <div className="max-w-6xl mx-auto space-y-6 p-4">
+      <div className="flex justify-between items-center mb-6">
+        <div className="text-center flex-1">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-child-primary via-child-secondary to-child-accent bg-clip-text text-transparent mb-3 animate-float font-quicksand">
+            Your Personal Journal 📖
+          </h1>
+          <p className="text-lg text-child-secondary font-medium">
+            Write about your day, feelings, and thoughts in your safe space ✨
+          </p>
+        </div>
+        <ThemeToggle />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="bg-white/70 backdrop-blur-sm border-2 border-blue-200 rounded-3xl">
-          <CardHeader>
-            <CardTitle className="text-xl text-blue-700 flex items-center gap-2">
-              <BookOpen className="w-6 h-6" />
-              Write New Entry
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <input
-              type="text"
-              placeholder="Give your entry a title... ✨"
-              value={entryTitle}
-              onChange={(e) => setEntryTitle(e.target.value)}
-              className="w-full p-3 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none"
+      <Card className="bg-white/90 dark:bg-child-surface/90 backdrop-blur-sm border-2 border-child-primary/20 rounded-3xl shadow-2xl">
+        <CardHeader className="text-center pb-6">
+          <div className="w-20 h-20 bg-gradient-to-r from-child-primary to-child-secondary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse-glow">
+            <BookOpen className="w-10 h-10 text-white" />
+          </div>
+          <CardTitle className="text-3xl font-quicksand text-child-primary mb-2">
+            Share Your Thoughts
+          </CardTitle>
+          <p className="text-child-secondary font-medium">
+            This is your special place to express yourself freely
+          </p>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Writing Area */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-child-primary">
+              {editingEntry ? "✏️ Edit your entry:" : "📝 Write a new entry:"}
+            </h3>
+            
+            <Input
+              value={journalTitle}
+              onChange={(e) => setJournalTitle(e.target.value)}
+              placeholder="Give your entry a title..."
+              className="rounded-2xl border-2 border-child-primary/20 focus:border-child-primary focus:ring-2 focus:ring-child-primary/20 text-base font-medium"
             />
             
             <Textarea
-              placeholder="What's on your mind today? Share your thoughts, feelings, or anything that happened... 💭
-
-Remember, this is your safe space to express yourself!"
-              value={journalText}
-              onChange={(e) => setJournalText(e.target.value)}
-              className="min-h-48 resize-none rounded-xl border-2 border-blue-200 focus:border-blue-400"
+              value={journalEntry}
+              onChange={(e) => setJournalEntry(e.target.value)}
+              placeholder="Start writing about your day... What happened? How did you feel? What made you happy?"
+              className="min-h-40 rounded-2xl border-2 border-child-primary/20 focus:border-child-primary focus:ring-2 focus:ring-child-primary/20 resize-none text-base"
             />
             
             <div className="flex gap-3">
-              <Button 
-                onClick={handleSaveEntry}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-xl"
-                disabled={!journalText.trim()}
+              <Button
+                onClick={saveEntry}
+                disabled={saving || !journalEntry.trim() || !journalTitle.trim()}
+                className="flex-1 bg-gradient-to-r from-child-primary to-child-secondary text-white rounded-2xl py-3 font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
               >
-                Save Entry 💾
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  setJournalText("");
-                  setEntryTitle("");
-                }}
-                className="rounded-xl border-2 border-blue-200"
-              >
-                Clear
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/70 backdrop-blur-sm border-2 border-green-200 rounded-3xl">
-          <CardHeader>
-            <CardTitle className="text-xl text-green-700 flex items-center gap-2">
-              <Calendar className="w-6 h-6" />
-              Your Recent Entries
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {journalEntries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="p-4 bg-white/50 rounded-xl hover:bg-white/70 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{entry.mood}</span>
-                      <span className="text-sm text-gray-500">{entry.date}</span>
-                    </div>
+                {saving ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
                   </div>
-                  <h3 className="font-semibold text-gray-800 mb-1">{entry.title}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-2">{entry.preview}</p>
-                </div>
-              ))}
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Save className="w-5 h-5" />
+                    {editingEntry ? "Update Entry" : "Save Entry"}
+                  </div>
+                )}
+              </Button>
+              
+              {editingEntry && (
+                <Button
+                  onClick={cancelEdit}
+                  variant="outline"
+                  className="px-6 rounded-2xl border-2 border-child-primary/20 hover:border-child-primary/40"
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+
+          {/* Prompts Section */}
+          {!editingEntry && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-child-primary">
+                ✨ Need some inspiration? Pick a prompt:
+              </h3>
+              <div className="grid gap-3">
+                {prompts.map((prompt, index) => (
+                  <Button
+                    key={index}
+                    onClick={() => handlePromptSelect(prompt)}
+                    variant="outline"
+                    className={`p-4 h-auto text-left justify-start rounded-2xl border-2 transition-all duration-300 hover:scale-105 ${
+                      selectedPrompt === prompt
+                        ? "border-child-primary bg-child-primary/10 text-child-primary"
+                        : "border-child-primary/20 hover:border-child-primary/40"
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="font-medium">{prompt}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Previous Entries */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-child-primary flex items-center gap-2">
+              📚 Your journal entries:
+              <span className="text-sm font-normal text-child-secondary">
+                ({entries.length} {entries.length === 1 ? 'entry' : 'entries'})
+              </span>
+            </h3>
+            
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin w-8 h-8 border-4 border-child-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-child-primary">Loading your entries...</p>
+              </div>
+            ) : entries.length === 0 ? (
+              <Card className="bg-child-background/50 border-child-primary/20 rounded-2xl p-6 text-center">
+                <BookOpen className="w-12 h-12 text-child-primary/50 mx-auto mb-3" />
+                <p className="text-child-primary/70 mb-2">No journal entries yet</p>
+                <p className="text-sm text-child-secondary">Start writing your first entry above!</p>
+              </Card>
+            ) : (
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {entries.map((entry) => (
+                  <Card key={entry.id} className="bg-white/90 dark:bg-child-surface/90 border-child-primary/20 rounded-2xl hover:shadow-lg transition-all duration-300">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-child-primary line-clamp-1">
+                          {entry.title}
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-child-secondary">
+                            {format(new Date(entry.created_at), 'MMM d, yyyy')}
+                          </span>
+                          <Button
+                            onClick={() => editEntry(entry)}
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-full hover:bg-child-primary/10"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-child-secondary line-clamp-3">
+                        {entry.content}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

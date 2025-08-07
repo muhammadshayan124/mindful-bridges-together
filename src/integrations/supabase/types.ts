@@ -85,6 +85,71 @@ export type Database = {
           },
         ]
       }
+      game_events: {
+        Row: {
+          event_type: string
+          id: string
+          session_id: string | null
+          timestamp: string | null
+          value: string | null
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          session_id?: string | null
+          timestamp?: string | null
+          value?: string | null
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          session_id?: string | null
+          timestamp?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_sessions: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          end_time: string | null
+          game_name: string
+          id: string
+          mood_after: Database["public"]["Enums"]["mood_type"] | null
+          mood_before: Database["public"]["Enums"]["mood_type"] | null
+          start_time: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          end_time?: string | null
+          game_name: string
+          id?: string
+          mood_after?: Database["public"]["Enums"]["mood_type"] | null
+          mood_before?: Database["public"]["Enums"]["mood_type"] | null
+          start_time?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          end_time?: string | null
+          game_name?: string
+          id?: string
+          mood_after?: Database["public"]["Enums"]["mood_type"] | null
+          mood_before?: Database["public"]["Enums"]["mood_type"] | null
+          start_time?: string | null
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           child_id: string

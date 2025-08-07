@@ -1,10 +1,12 @@
 
+import { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ChildNavbar from "@/components/child/ChildNavbar";
 import ChildChat from "@/components/child/ChildChat";
 import ChildMood from "@/components/child/ChildMood";
 import ChildJournal from "@/components/child/ChildJournal";
 import ChildGames from "@/components/child/ChildGames";
+import ChatbotPanel from "@/components/child/ChatbotPanel";
 import BreathingBuddy from "@/components/child/games/BreathingBuddy";
 import EmotionDetective from "@/components/child/games/EmotionDetective";
 import MindfulMaze from "@/components/child/games/MindfulMaze";
@@ -13,6 +15,8 @@ import GratitudeGarden from "@/components/child/games/GratitudeGarden";
 import CopingCastle from "@/components/child/games/CopingCastle";
 
 const ChildInterface = () => {
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+
   return (
     <div className="min-h-screen child-interface font-quicksand animate-fade-in-up">
       {/* Decorative background elements */}
@@ -27,7 +31,7 @@ const ChildInterface = () => {
       <ChildNavbar />
       <div className="pt-24 px-4 pb-8 relative z-10">
         <Routes>
-          <Route path="/" element={<Navigate to="/child/chat" replace />} />
+          <Route path="/" element={<Navigate to="/child/mood" replace />} />
           <Route path="/chat" element={<ChildChat />} />
           <Route path="/mood" element={<ChildMood />} />
           <Route path="/journal" element={<ChildJournal />} />
@@ -40,6 +44,11 @@ const ChildInterface = () => {
           <Route path="/games/coping-castle" element={<CopingCastle />} />
         </Routes>
       </div>
+
+      <ChatbotPanel 
+        isOpen={isChatbotOpen} 
+        onToggle={() => setIsChatbotOpen(!isChatbotOpen)} 
+      />
     </div>
   );
 };
