@@ -11,6 +11,7 @@ interface ChatbotPanelProps {
 
 const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -20,29 +21,58 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
     }
   ]);
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  const handleSendMessage = async () => {
+    if (!message.trim() || isLoading) return;
 
+    const userMessage = message.trim();
     const newMessage = {
       id: Date.now(),
-      text: message,
+      text: userMessage,
       isBot: false,
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, newMessage]);
     setMessage("");
+    setIsLoading(true);
 
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      const response = await fetch('https://mindfullbuddy-production.up.railway.app/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: userMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
       const botResponse = {
         id: Date.now() + 1,
-        text: "That's wonderful to hear! Remember, I'm here whenever you need to talk. You can also try some of our fun games to boost your mood! 🌟",
+        text: data.reply || "I'm sorry, I didn't understand that. Can you try asking again?",
         isBot: true,
         timestamp: new Date(),
       };
+      
       setMessages(prev => [...prev, botResponse]);
-    }, 1000);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      const errorResponse = {
+        id: Date.now() + 1,
+        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment! 😔",
+        isBot: true,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) {
@@ -107,7 +137,8 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
           <Button
             onClick={handleSendMessage}
             size="icon"
-            className="rounded-full bg-child-primary hover:bg-child-primary/90 text-white"
+            disabled={isLoading}
+            className="rounded-full bg-child-primary hover:bg-child-primary/90 text-white disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
           </Button>
