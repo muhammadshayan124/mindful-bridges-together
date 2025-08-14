@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ChatbotPanelProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface ChatbotPanelProps {
 }
 
 const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
+  const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
@@ -20,6 +23,82 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
       timestamp: new Date(),
     }
   ]);
+  const messagesRef = useRef(messages);
+
+  // Update ref when messages change
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  // Save conversation to Supabase
+  const saveConversationToSupabase = async () => {
+    if (!user?.id || messagesRef.current.length <= 1) return;
+
+    try {
+      // Save all messages except the initial greeting
+      const messagesToSave = messagesRef.current.slice(1).map(msg => ({
+        child_id: user.id,
+        message: msg.text,
+        is_user: !msg.isBot,
+        created_at: msg.timestamp.toISOString(),
+      }));
+
+      if (messagesToSave.length > 0) {
+        const { error } = await supabase
+          .from('chat_messages')
+          .insert(messagesToSave);
+
+        if (error) {
+          console.error('Error saving conversation:', error);
+        } else {
+          console.log('Conversation saved successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Error saving conversation to Supabase:', error);
+    }
+  };
+
+  // Save conversation when chat closes
+  const handleToggle = () => {
+    saveConversationToSupabase();
+    onToggle();
+  };
+
+  // Save conversation on page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveConversationToSupabase();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Also save when component unmounts
+      saveConversationToSupabase();
+    };
+  }, []);
+
+  // Save individual messages immediately after they're sent/received
+  const saveMessageToSupabase = async (messageText: string, isUser: boolean) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          child_id: user.id,
+          message: messageText,
+          is_user: isUser,
+        });
+
+      if (error) {
+        console.error('Error saving message:', error);
+      }
+    } catch (error) {
+      console.error('Error saving message to Supabase:', error);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -35,6 +114,9 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
     setMessages(prev => [...prev, newMessage]);
     setMessage("");
     setIsLoading(true);
+
+    // Save user message immediately
+    await saveMessageToSupabase(userMessage, true);
 
     try {
       const response = await fetch('https://mindfullbuddy-production.up.railway.app/chat', {
@@ -59,6 +141,9 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
       };
       
       setMessages(prev => [...prev, botResponse]);
+      
+      // Save bot response immediately
+      await saveMessageToSupabase(botResponse.text, false);
     } catch (error) {
       console.error('Error sending message:', error);
       
@@ -98,7 +183,7 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={onToggle}
+            onClick={handleToggle}
             className="h-8 w-8 rounded-full hover:bg-child-primary/10"
           >
             <X className="w-4 h-4" />
