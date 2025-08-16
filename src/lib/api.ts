@@ -1,1 +1,1 @@
-export const API_BASE = import.meta.env.VITE_MINDFULL_BUDDY_API || "";
+export const API_BASE = import.meta.env.VITE_MINDFULL_BUDDY_API || "https://mindfullbuddy-production.up.railway.app";
