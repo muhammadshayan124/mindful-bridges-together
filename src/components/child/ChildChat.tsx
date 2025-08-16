@@ -4,39 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Send, Bot, User, Heart, Sparkles } from "lucide-react";
-
-const mockMessages = [
-  { 
-    id: 1, 
-    type: "bot", 
-    message: "Hi there! I'm your AI buddy. 🌟 How are you feeling today?", 
-    timestamp: "2 minutes ago" 
-  },
-  { 
-    id: 2, 
-    type: "user", 
-    message: "I'm feeling a bit worried about school tomorrow", 
-    timestamp: "2 minutes ago" 
-  },
-  { 
-    id: 3, 
-    type: "bot", 
-    message: "I understand that feeling worried about school is completely normal. 💙 What specifically is making you feel worried? Is it a test, friends, or something else?", 
-    timestamp: "1 minute ago" 
-  },
-  { 
-    id: 4, 
-    type: "user", 
-    message: "I have a math test and I'm not good at math", 
-    timestamp: "1 minute ago" 
-  },
-  { 
-    id: 5, 
-    type: "bot", 
-    message: "It sounds like you're feeling anxious about the math test. That's completely understandable! 🌈 Remember, it's okay not to be perfect at everything. What have you done to prepare for the test so far? ✨", 
-    timestamp: "30 seconds ago" 
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE } from "@/lib/api";
 
 const TypingIndicator = () => {
   return (
@@ -56,10 +26,16 @@ const TypingIndicator = () => {
 };
 
 const ChildChat = () => {
-  const [messages, setMessages] = useState(mockMessages);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Log API base URL
+  useEffect(() => {
+    console.log("[MB] ChildChat API_BASE:", API_BASE);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -69,41 +45,95 @@ const ChildChat = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    
+  const saveMessageToSupabase = async (messageText: string, isUser: boolean) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          child_id: user.id,
+          message: messageText,
+          is_user: isUser,
+        });
+
+      if (error) {
+        console.error('Error saving message to Supabase:', error);
+      }
+    } catch (error) {
+      console.error('Error saving message to Supabase:', error);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || isTyping) return;
+    if (!API_BASE) {
+      const errorMessage = {
+        id: messages.length + 1,
+        type: "bot",
+        message: "Setup issue: API not configured.",
+        timestamp: "Just now"
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+
     const userMessage = {
       id: messages.length + 1,
-      type: "user" as const,
+      type: "user",
       message: newMessage,
       timestamp: "Just now"
     };
-    
+
     setMessages([...messages, userMessage]);
     setNewMessage("");
     setIsTyping(true);
-    
-    // Simulate bot response with typing indicator
-    setTimeout(() => {
-      setIsTyping(false);
-      const botResponses = [
-        "Thank you for sharing that with me. How does talking about it make you feel? 💙",
-        "I'm here to listen and support you. What would help you feel better right now? 🌟",
-        "That sounds important to you. Tell me more about how you're handling this. ✨",
-        "I understand. Remember, you're doing great by talking about your feelings! 🌈",
-        "That's really brave of you to share. What else is on your mind today? 💜",
-        "I can hear that this matters to you. How can we work through this together? 🤗"
-      ];
-      
-      const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
+
+    const payload = { text: userMessage.message, session_id: user?.id };
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+
+    try {
+      const response = await fetch(`${API_BASE}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: ctrl.signal,
+      });
+
+      clearTimeout(timer);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${await response.text().catch(() => "")}`);
+      }
+
+      const data = await response.json();
+
       const botMessage = {
         id: messages.length + 2,
-        type: "bot" as const,
-        message: randomResponse,
+        type: "bot",
+        message: data?.reply || "I'm having trouble replying right now.",
         timestamp: "Just now"
       };
+
       setMessages(prev => [...prev, botMessage]);
-    }, 2000);
+
+      // Save both user and bot messages to Supabase
+      await saveMessageToSupabase(userMessage.message, true);
+      await saveMessageToSupabase(botMessage.message, false);
+    } catch (error) {
+      console.error("[MB] ChildChat handleSendMessage() error:", error);
+      const botErrorMessage = {
+        id: messages.length + 2,
+        type: "bot",
+        message: "I couldn't reach our helper. Try again?",
+        timestamp: "Just now"
+      };
+      setMessages(prev => [...prev, botErrorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -115,21 +145,6 @@ const ChildChat = () => {
 
   return (
     <div className="max-w-4xl mx-auto font-quicksand">
-      {/* Header */}
-      <div className="mb-8 text-center animate-fade-in-up">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <Sparkles className="w-8 h-8 text-mindful-accent animate-gentle-pulse" />
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-mindful-accent via-mindful-send-button to-mindful-mint bg-clip-text text-transparent font-quicksand">
-            Chat with Your AI Buddy
-          </h1>
-          <Bot className="w-8 h-8 text-mindful-send-button animate-gentle-pulse" />
-        </div>
-        <p className="text-xl text-purple-600 dark:text-purple-300 font-medium">
-          Share your thoughts and feelings in a safe, caring space 💙
-        </p>
-      </div>
-      
-      {/* Chat Container */}
       <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
         {/* Chat Messages */}
         <div className="h-[600px] overflow-y-auto p-8 space-y-6 bg-gradient-to-b from-white/30 to-transparent dark:from-gray-800/30">
@@ -198,15 +213,6 @@ const ChildChat = () => {
             >
               <Send className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-200" />
             </Button>
-          </div>
-          
-          {/* Footer Message */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-purple-600 dark:text-purple-300 font-medium flex items-center justify-center gap-2">
-              <Heart className="w-4 h-4 text-pink-400" />
-              Remember: You're safe here, and your feelings matter
-              <Sparkles className="w-4 h-4 text-mindful-accent" />
-            </p>
           </div>
         </div>
       </Card>
