@@ -12,16 +12,21 @@ interface ChatbotPanelProps {
   onToggle: () => void;
 }
 
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
+
 const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
   const { user } = useAuth();
-  const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState([
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
-      text: "Hi there! 👋 I'm your MindfulBuddy! How are you feeling today?",
-      isBot: true,
-      timestamp: new Date(),
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: "Hi there! 👋 I'm your MindfulBuddy! How are you feeling today?",
     }
   ]);
   const messagesRef = useRef(messages);
@@ -44,9 +49,8 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
       // Save all messages except the initial greeting
       const messagesToSave = messagesRef.current.slice(1).map(msg => ({
         child_id: user.id,
-        message: msg.text,
-        is_user: !msg.isBot,
-        created_at: msg.timestamp.toISOString(),
+        message: msg.content,
+        is_user: msg.role === "user",
       }));
 
       if (messagesToSave.length > 0) {
@@ -106,65 +110,47 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!message.trim() || isLoading) return;
-
-    const userMessage = message.trim();
-    const newMessage = {
-      id: Date.now(),
-      text: userMessage,
-      isBot: false,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, newMessage]);
-    setMessage("");
-    setIsLoading(true);
-
+  async function send() {
+    const text = input.trim();
+    if (!text || loading) return;
+    if (!API_BASE) {
+      setMessages(m => [...m, { id: crypto.randomUUID(), role: "assistant", content: "Setup issue: API not configured." }]);
+      return;
+    }
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text };
+    setMessages(m => [...m, userMsg]);
+    setInput(""); 
+    setLoading(true);
+    
     // Save user message immediately
-    await saveMessageToSupabase(userMessage, true);
-
+    await saveMessageToSupabase(text, true);
+    
+    const ctrl = new AbortController(); 
+    const timer = setTimeout(() => ctrl.abort(), 20000);
     try {
-      const response = await fetch('https://mindfullbuddy-production.up.railway.app/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: userMessage }),
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, session_id: user?.id }),
+        signal: ctrl.signal,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      const botResponse = {
-        id: Date.now() + 1,
-        text: data.reply || "I'm sorry, I didn't understand that. Can you try asking again?",
-        isBot: true,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, botResponse]);
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${await res.text().catch(()=> "")}`);
+      const data = await res.json();
+      const reply = (data?.reply ?? "").toString().trim() || "I'm having trouble replying right now.";
+      const assistantMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: reply };
+      setMessages(m => [...m, assistantMsg]);
       
       // Save bot response immediately
-      await saveMessageToSupabase(botResponse.text, false);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      
-      const errorResponse = {
-        id: Date.now() + 1,
-        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment! 😔",
-        isBot: true,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, errorResponse]);
-    } finally {
-      setIsLoading(false);
+      await saveMessageToSupabase(reply, false);
+    } catch (e) {
+      console.error("[MB] send() error:", e);
+      const errorMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "I couldn't reach our helper. Try again?" };
+      setMessages(m => [...m, errorMsg]);
+    } finally { 
+      setLoading(false); 
     }
-  };
+  }
 
   if (!isOpen) {
     return (
@@ -202,16 +188,16 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}
+              className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
             >
               <div
                 className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
-                  msg.isBot
+                  msg.role === 'assistant'
                     ? 'bg-gradient-to-r from-child-primary/20 to-child-secondary/20 text-child-primary border border-child-primary/20'
                     : 'bg-child-accent text-white'
                 }`}
               >
-                {msg.text}
+                {msg.content}
               </div>
             </div>
           ))}
@@ -219,16 +205,16 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
         
         <div className="flex gap-2">
           <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
             className="rounded-full bg-child-background border-child-primary/20 focus:border-child-primary"
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={(e) => e.key === 'Enter' && send()}
           />
           <Button
-            onClick={handleSendMessage}
+            onClick={send}
             size="icon"
-            disabled={isLoading}
+            disabled={loading}
             className="rounded-full bg-child-primary hover:bg-child-primary/90 text-white disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
