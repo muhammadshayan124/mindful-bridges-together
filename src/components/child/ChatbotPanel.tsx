@@ -5,6 +5,7 @@ import { MessageCircle, X, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE } from "@/lib/api";
 
 interface ChatbotPanelProps {
   isOpen: boolean;
@@ -24,6 +25,11 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
     }
   ]);
   const messagesRef = useRef(messages);
+
+  // Log API base URL
+  useEffect(() => {
+    console.log("[MB] API_BASE:", API_BASE);
+  }, []);
 
   // Update ref when messages change
   useEffect(() => {
