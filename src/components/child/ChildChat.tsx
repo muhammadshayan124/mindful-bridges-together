@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Send, Bot, User, Heart, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { API_BASE, ingestJournal } from "@/lib/api";
 
 const TypingIndicator = () => {
   return (
@@ -31,12 +30,6 @@ const ChildChat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const currentChildId = user?.id || 'mock-child';
-
-  // Log API base URL
-  useEffect(() => {
-    console.log("[MB] ChildChat API_BASE:", API_BASE);
-  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,13 +40,11 @@ const ChildChat = () => {
   }, [messages, isTyping]);
 
   const saveMessageToSupabase = async (messageText: string, isUser: boolean) => {
-    if (!user?.id) return;
-
     try {
       const { error } = await supabase
         .from('chat_messages')
         .insert({
-          child_id: user.id,
+          child_id: "USER_ID",  // replace with the actual user ID
           message: messageText,
           is_user: isUser,
         });
@@ -67,17 +58,7 @@ const ChildChat = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || isTyping) return;
-    if (!API_BASE) {
-      const errorMessage = {
-        id: messages.length + 1,
-        type: "bot",
-        message: "Setup issue: API not configured.",
-        timestamp: "Just now"
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      return;
-    }
+    if (!newMessage.trim()) return;
 
     const userMessage = {
       id: messages.length + 1,
@@ -87,34 +68,25 @@ const ChildChat = () => {
     };
 
     setMessages([...messages, userMessage]);
-    setNewMessage("");
+    setNewMessage("");  // Clear input field
     setIsTyping(true);
 
-    const payload = { text: userMessage.message, session_id: currentChildId };
-
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 20000);
+    // Send data to the API
+    const payload = { text: userMessage.message };
 
     try {
-      const response = await fetch(`${API_BASE}/chat`, {
+      const response = await fetch("https://mindfullbuddy-production.up.railway.app/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        signal: ctrl.signal,
       });
-
-      clearTimeout(timer);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} ${await response.text().catch(() => "")}`);
-      }
 
       const data = await response.json();
 
       const botMessage = {
         id: messages.length + 2,
         type: "bot",
-        message: data?.reply || "I'm having trouble replying right now.",
+        message: data?.reply,
         timestamp: "Just now"
       };
 
@@ -124,11 +96,11 @@ const ChildChat = () => {
       await saveMessageToSupabase(userMessage.message, true);
       await saveMessageToSupabase(botMessage.message, false);
     } catch (error) {
-      console.error("[MB] ChildChat handleSendMessage() error:", error);
+      console.error("Error sending data:", error);
       const botErrorMessage = {
         id: messages.length + 2,
         type: "bot",
-        message: "I couldn't reach our helper. Try again?",
+        message: "Oops, something went wrong! Please try again.",
         timestamp: "Just now"
       };
       setMessages(prev => [...prev, botErrorMessage]);
