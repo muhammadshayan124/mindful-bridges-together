@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Send, Bot, User, Heart, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, ingestJournal } from "@/lib/api";
 
 const TypingIndicator = () => {
   return (
@@ -31,6 +31,7 @@ const ChildChat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const currentChildId = user?.id || 'mock-child';
 
   // Log API base URL
   useEffect(() => {
@@ -89,7 +90,7 @@ const ChildChat = () => {
     setNewMessage("");
     setIsTyping(true);
 
-    const payload = { text: userMessage.message, session_id: user?.id };
+    const payload = { text: userMessage.message, session_id: currentChildId };
 
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 20000);

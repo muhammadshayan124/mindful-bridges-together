@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ingestJournal } from "@/lib/api";
 
 const prompts = [
   "What made you smile today? 😊",
@@ -120,6 +121,20 @@ const ChildJournal = () => {
         toast({
           title: "Entry saved! 📖",
           description: "Your journal entry has been saved",
+        });
+
+        // Fire-and-forget journal analysis for new entries
+        void ingestJournal(user.id, journalEntry).then(() => {
+          toast({
+            title: "Journal synced",
+            description: "Entry analyzed for insights",
+          });
+        }).catch(() => {
+          toast({
+            title: "Sync warning",
+            description: "Entry saved but couldn't sync insights",
+            variant: "destructive",
+          });
         });
       }
 
