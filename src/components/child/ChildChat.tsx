@@ -1,16 +1,26 @@
-
-import { useState, useEffect, useRef } from "react";
+// src/components/child/ChildChat.tsx
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuthToken } from "@/hooks/useAuthToken"; // must return { token }
+import { useChild } from "@/contexts/ChildContext";  // must return { childId }
+import { smartSendChat, clearChatDiscoveryCache } from "@/lib/chatTransport";
+import { API_BASE } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Send, Bot, User, Heart, ShieldAlert } from "lucide-react";
-import { useChild } from "@/contexts/ChildContext";
-import { useAuthToken } from "@/hooks/useAuthToken";
-import { postJSON } from "@/lib/api";
-import { ChatTurn, ChatOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import RiskBadge from "@/components/ui/RiskBadge";
 import SafetyPanel from "@/components/SafetyPanel";
+
+type Turn = { role: 'user'|'assistant'; content: string };
+
+interface Message {
+  id: number;
+  type: 'user' | 'bot';
+  message: string;
+  timestamp: string;
+  triage?: 'none'|'low'|'medium'|'high';
+}
 
 const TypingIndicator = () => {
   return (
@@ -29,86 +39,81 @@ const TypingIndicator = () => {
   );
 };
 
-interface Message {
-  id: number;
-  type: 'user' | 'bot';
-  message: string;
-  timestamp: string;
-  triage?: 'none'|'low'|'medium'|'high';
-}
-
-const ChildChat = () => {
-  const { childId } = useChild();
+export default function ChildChat() {
   const { token } = useAuthToken();
+  const { childId } = useChild();
   const { toast } = useToast();
+  const [turns, setTurns] = useState<Turn[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentTriage, setCurrentTriage] = useState<'none'|'low'|'medium'|'high'>('none');
   const [safetyLock, setSafetyLock] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const canSend = useMemo(() => input.trim().length > 0 && !!childId && !!token && !safetyLock, [input, childId, token, safetyLock]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !childId || !token || safetyLock) return;
-
+  async function onSend() {
+    if (!canSend || sending) return;
+    setError(null);
+    const userTurn: Turn = { role: 'user', content: input.trim() };
     const userMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now(),
       type: "user",
-      message: newMessage,
+      message: input.trim(),
       timestamp: "Just now"
     };
-
+    
+    setTurns(prev => [...prev, userTurn]);
     setMessages(prev => [...prev, userMessage]);
-    const messageText = newMessage;
-    setNewMessage("");
-    setIsTyping(true);
-
+    setInput("");
+    setSending(true);
+    
     try {
-      // Build conversation history for context
-      const turns: ChatTurn[] = [
-        ...messages.slice(-10).map(msg => ({ // Last 10 messages for context
-          role: msg.type === 'user' ? 'user' as const : 'assistant' as const,
-          content: msg.message
-        })),
-        { role: 'user', content: messageText }
-      ];
-
-      const chatResponse = await postJSON<ChatOut>('/api/chat', {
-        child_id: childId,
-        turns
-      }, token);
-
+      const { replyText, raw } = await smartSendChat(
+        token!, childId!, [...turns, userTurn], API_BASE
+      );
+      
       const botMessage: Message = {
-        id: messages.length + 2,
+        id: Date.now() + 1,
         type: "bot",
-        message: chatResponse.reply,
+        message: replyText,
         timestamp: "Just now",
-        triage: chatResponse.triage
+        triage: raw.triage
       };
-
+      
+      setTurns(prev => [...prev, { role: 'assistant', content: replyText }]);
       setMessages(prev => [...prev, botMessage]);
 
       // Update triage status
-      if (chatResponse.triage) {
-        setCurrentTriage(chatResponse.triage);
-        if (chatResponse.triage === 'high') {
+      if (raw.triage) {
+        setCurrentTriage(raw.triage);
+        if (raw.triage === 'high') {
           setSafetyLock(true);
         }
       }
-
-    } catch (error) {
-      console.error("Error sending message:", error);
+      
+    } catch (e: any) {
+      let errorMessage = e.message || String(e);
+      
+      // Add user-friendly error messages for common failures
+      if (errorMessage.includes('401') || errorMessage.includes('403')) {
+        errorMessage = "Your session may have expired. Please log in again.";
+      } else if (errorMessage.includes('TypeError: Failed to fetch') || errorMessage.includes('CORS')) {
+        errorMessage = "The server blocked the request (CORS). Add your Lovable origin to the backend CORS allowlist.";
+      } else if (errorMessage.includes('404')) {
+        errorMessage = "Endpoint not found. We tried /api/chat and /chat. Verify the server routes.";
+      } else if (errorMessage.includes('400')) {
+        errorMessage = "Server rejected the payload. The app will try alternate payload shapes.";
+      }
+      
+      setError(errorMessage);
+      
       const botErrorMessage: Message = {
-        id: messages.length + 2,
+        id: Date.now() + 1,
         type: "bot",
         message: "I'm having trouble connecting right now. Please try again in a moment.",
         timestamp: "Just now"
@@ -121,20 +126,45 @@ const ChildChat = () => {
         variant: "destructive"
       });
     } finally {
-      setIsTyping(false);
+      setSending(false);
     }
-  };
+  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      onSend();
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto font-quicksand">
       <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
+        
+        {/* Diagnostics banner */}
+        {(!childId || !token || error) && (
+          <div className="p-3 mb-2 rounded bg-red-50 border border-red-200 text-red-700 text-sm">
+            {!token && <>Missing auth token. Please sign in again.</>}
+            {!childId && <>No child is linked. Enter a link code first.</>}
+            {error && <><b>Chat error:</b> {error}</>}
+          </div>
+        )}
+
+        {/* Connection Status card (small, collapsible) */}
+        <details className="mb-2 text-sm border-b bg-gray-50 dark:bg-gray-800">
+          <summary className="cursor-pointer p-3">Connection Status</summary>
+          <div className="p-3 bg-gray-50 dark:bg-gray-700">
+            <div className="mb-2">API Base: <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">{API_BASE}</code></div>
+            <div className="mb-2">Child ID: <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded text-xs">{childId ?? '(none)'}</code></div>
+            <button
+              className="mt-2 px-3 py-1 rounded bg-gray-800 text-white text-xs hover:bg-gray-900"
+              onClick={() => { clearChatDiscoveryCache(); toast({ title: "Cache cleared", description: "Endpoint cache cleared" }); }}
+            >
+              Clear endpoint cache
+            </button>
+          </div>
+        </details>
+
         {/* Chat Header */}
         <div className="p-4 border-b bg-gradient-to-r from-white/90 to-blue-50/90 dark:from-gray-800/90 dark:to-gray-700/90 backdrop-blur-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -190,9 +220,9 @@ const ChildChat = () => {
             </div>
           ))}
           
-          {isTyping && <TypingIndicator />}
+          {sending && <TypingIndicator />}
           {safetyLock && <SafetyPanel childId={childId || ''} />}
-          <div ref={messagesEndRef} />
+          <div ref={bottomRef} />
         </div>
         
         {/* Input Area */}
@@ -201,21 +231,21 @@ const ChildChat = () => {
             <div className="flex-1 relative">
               <Input
                 placeholder={safetyLock ? "Chat is paused for your safety" : "Share what's on your mind... 💭"}
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="mindful-input-child child-focus text-base font-medium placeholder:text-gray-400 pr-12"
-                disabled={isTyping || safetyLock}
+                disabled={sending || safetyLock}
               />
-              {newMessage && (
+              {input && (
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                   <Heart className="w-5 h-5 text-pink-400 animate-gentle-pulse" />
                 </div>
               )}
             </div>
             <Button
-              onClick={handleSendMessage}
-              disabled={isTyping || !newMessage.trim() || safetyLock}
+              onClick={onSend}
+              disabled={!canSend || sending}
               className="mindful-button-child w-16 h-16 p-0 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <Send className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-200" />
@@ -225,6 +255,4 @@ const ChildChat = () => {
       </Card>
     </div>
   );
-};
-
-export default ChildChat;
+}
