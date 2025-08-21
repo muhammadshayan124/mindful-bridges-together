@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useChild } from "@/contexts/ChildContext";
+import { useAuthToken } from "@/hooks/useAuthToken";
+import { postJSON } from "@/lib/api";
+import { ChatTurn, ChatOut } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatbotPanelProps {
   isOpen: boolean;
@@ -12,7 +15,9 @@ interface ChatbotPanelProps {
 }
 
 const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
-  const { user } = useAuth();
+  const { childId } = useChild();
+  const { token } = useAuthToken();
+  const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
@@ -25,33 +30,8 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
   ]);
   const messagesRef = useRef(messages);
 
-  useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
-
-  const saveMessageToSupabase = async (messageText: string, isUser: boolean) => {
-    if (!user?.id) return;
-
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          child_id: user.id,
-          message: messageText,
-          is_user: isUser,
-          created_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Error saving message:', error);
-      }
-    } catch (error) {
-      console.error('Error saving message to Supabase:', error);
-    }
-  };
-
   const handleSendMessage = async () => {
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || !childId || !token) return;
 
     const userMessage = message.trim();
     const newMessage = {
@@ -65,36 +45,38 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
     setMessage("");
     setIsLoading(true);
 
-    // Save user message immediately to Supabase
-    await saveMessageToSupabase(userMessage, true);
-
     try {
-      const response = await fetch('https://mindfullbuddy-production.up.railway.app/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: userMessage }),
-      });
+      const turns: ChatTurn[] = [
+        ...messages.map(msg => ({ 
+          role: msg.isBot ? 'assistant' as const : 'user' as const, 
+          content: msg.text 
+        })),
+        { role: 'user', content: userMessage }
+      ];
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const response = await postJSON<ChatOut>('/api/chat', {
+        child_id: childId,
+        turns
+      }, token);
 
       const botResponse = {
         id: Date.now() + 1,
-        text: data.reply || "Sorry, I didn't understand that.",
+        text: response.reply,
         isBot: true,
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, botResponse]);
 
-      // Save bot response to Supabase
-      await saveMessageToSupabase(botResponse.text, false);
+      if (response.triage && response.triage !== 'none') {
+        toast({
+          title: "Support available",
+          description: "If you need immediate help, please talk to a trusted adult.",
+        });
+      }
     } catch (error) {
       console.error('Error sending message:', error);
-
+      
       const errorResponse = {
         id: Date.now() + 1,
         text: "Sorry, something went wrong. Please try again.",
@@ -103,10 +85,16 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
       };
 
       setMessages(prev => [...prev, errorResponse]);
+      
+      toast({
+        title: "Connection error",
+        description: "Unable to send message. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   // Save conversation when chat closes
   const handleToggle = () => {

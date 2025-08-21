@@ -1,19 +1,22 @@
-import { ingestGameSession } from '@/lib/api';
+import { postJSON } from '@/lib/api';
+import { OkOut } from '@/types';
 
-export function useGameTelemetry(childId: string) {
+export function useGameTelemetry(childId: string, token: string) {
   let start = 0;
   
   return {
     startSession() { 
       start = Date.now(); 
     },
-    async endSession(activity: string, mood_before: string, mood_after: string) {
-      const duration_seconds = Math.max(1, Math.round((Date.now() - start) / 1000));
+    async endSession(activity: string, delta: number = 0) {
       try { 
-        await ingestGameSession({ childId, activity, mood_before, mood_after, duration_seconds }); 
+        await postJSON<OkOut>('/api/ingest/game', { 
+          child_id: childId, 
+          activity, 
+          delta 
+        }, token); 
       } catch (error) {
         console.warn('Could not sync game session:', error);
-        // toast.warn('Could not sync game session')
       }
     }
   };

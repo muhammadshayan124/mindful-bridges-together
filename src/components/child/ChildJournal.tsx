@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Save, Sparkles } from "lucide-react";
+import { BookOpen, Save, Sparkles, Edit3 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { useChild } from "@/contexts/ChildContext";
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { postJSON } from "@/lib/api";
 import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const prompts = [
   "What made you smile today? 😊",
@@ -38,38 +39,16 @@ const ChildJournal = () => {
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { user } = useAuth();
+  const { childId } = useChild();
+  const { token } = useAuthToken();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user) {
-      loadEntries();
-    }
-  }, [user]);
-
+  // For now, we'll keep entries in local state since this is a demo
+  // In the real app, you'd fetch from the backend API
   const loadEntries = async () => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('journal_entries')
-        .select('*')
-        .eq('child_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setEntries(data || []);
-    } catch (error) {
-      console.error('Error loading entries:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load journal entries",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // This would call your API to load journal entries
+    // For now, we'll just clear loading state
+    setLoading(false);
   };
 
   const handlePromptSelect = (prompt: string) => {
@@ -79,7 +58,7 @@ const ChildJournal = () => {
   };
 
   const saveEntry = async () => {
-    if (!user || !journalEntry.trim() || !journalTitle.trim()) {
+    if (!childId || !token || !journalEntry.trim() || !journalTitle.trim()) {
       toast({
         title: "Missing information",
         description: "Please add both a title and some content to your journal entry",
@@ -91,51 +70,39 @@ const ChildJournal = () => {
     try {
       setSaving(true);
       
-      if (editingEntry) {
-        // Update existing entry
-        const { error } = await supabase
-          .from('journal_entries')
-          .update({
-            title: journalTitle,
-            content: journalEntry,
-          })
-          .eq('id', editingEntry.id);
+      // For now, we'll just save to local state and call the API
+      // In a real app, you'd have separate endpoints for CRUD operations
+      const response = await postJSON<OkOut>('/api/ingest/journal', {
+        child_id: childId,
+        text: journalEntry
+      }, token);
 
-        if (error) throw error;
-        
+      // Add to local entries
+      const newEntry: JournalEntry = {
+        id: Date.now().toString(),
+        title: journalTitle,
+        content: journalEntry,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      if (editingEntry) {
+        setEntries(prev => prev.map(entry => 
+          entry.id === editingEntry.id 
+            ? { ...newEntry, id: editingEntry.id }
+            : entry
+        ));
         toast({
           title: "Entry updated! ✏️",
           description: "Your journal entry has been saved",
         });
       } else {
-        // Create new entry
-        const { error } = await supabase
-          .from('journal_entries')
-          .insert({
-            child_id: user.id,
-            title: journalTitle,
-            content: journalEntry,
-          });
-
-        if (error) throw error;
-        
+        setEntries(prev => [newEntry, ...prev]);
         toast({
           title: "Entry saved! 📖",
-          description: "Your journal entry has been saved",
-        });
-
-        // Fire-and-forget journal analysis for new entries
-        void ingestJournal(user.id, journalEntry).then(() => {
-          toast({
-            title: "Journal synced",
-            description: "Entry analyzed for insights",
-          });
-        }).catch(() => {
-          toast({
-            title: "Sync warning",
-            description: "Entry saved but couldn't sync insights",
-            variant: "destructive",
-          });
+          description: response.sentiment 
+            ? "Your journal entry has been saved and analyzed"
+            : "Your journal entry has been saved",
         });
       }
 
@@ -144,9 +111,6 @@ const ChildJournal = () => {
       setJournalTitle("");
       setSelectedPrompt(null);
       setEditingEntry(null);
-      
-      // Reload entries
-      loadEntries();
     } catch (error) {
       console.error('Error saving entry:', error);
       toast({
