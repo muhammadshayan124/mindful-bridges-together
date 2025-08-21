@@ -1,62 +1,126 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { AlertTriangle, TrendingUp, TrendingDown, Users, Calendar, Bell } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AlertTriangle, TrendingUp, Users, Calendar, Plus, Copy, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useAuthToken } from "@/hooks/useAuthToken";
+import { getJSON, postJSON } from "@/lib/api";
+import { ParentOverview, ParentChild, LinkCodeCreateOut } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import RiskBadge from "@/components/ui/RiskBadge";
+import Sparkline from "@/components/charts/Sparkline";
 
-// Mock data
-const moodData = [
-  { day: 'Mon', Emma: 8, Lucas: 6 },
-  { day: 'Tue', Emma: 7, Lucas: 7 },
-  { day: 'Wed', Emma: 9, Lucas: 5 },
-  { day: 'Thu', Emma: 6, Lucas: 8 },
-  { day: 'Fri', Emma: 8, Lucas: 6 },
-  { day: 'Sat', Emma: 9, Lucas: 9 },
-  { day: 'Sun', Emma: 8, Lucas: 7 },
-];
-
-const children = [
-  {
-    id: 1,
-    name: "Emma",
-    avatar: "👧",
-    currentMood: "😊",
-    moodScore: 8,
-    lastActivity: "2 hours ago",
-    alertFlag: false,
-    streak: 5
-  },
-  {
-    id: 2,
-    name: "Lucas",
-    avatar: "👦",
-    currentMood: "😐",
-    moodScore: 6,
-    lastActivity: "30 minutes ago",
-    alertFlag: true,
-    streak: 2
-  }
-];
-
-const notifications = [
-  {
-    id: 1,
-    type: "warning",
-    message: "Lucas has reported low mood for 3 consecutive days",
-    time: "2 hours ago",
-    priority: "high"
-  },
-  {
-    id: 2,
-    type: "info",
-    message: "Emma completed her daily journal entry",
-    time: "4 hours ago",
-    priority: "low"
-  }
-];
 
 const ParentDashboard = () => {
+  const [overview, setOverview] = useState<ParentOverview | null>(null);
+  const [children, setChildren] = useState<ParentChild[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [linkExpiry, setLinkExpiry] = useState<string | null>(null);
+  const [creatingLink, setCreatingLink] = useState(false);
+  const { token } = useAuthToken();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (token) {
+      loadData();
+      const interval = setInterval(loadData, 60000); // Refresh every minute
+      return () => clearInterval(interval);
+    }
+  }, [token]);
+
+  const loadData = async () => {
+    if (!token) return;
+    
+    try {
+      const [overviewData, childrenData] = await Promise.all([
+        getJSON<ParentOverview>('/api/parent/overview?days=7', token),
+        getJSON<ParentChild[]>('/api/parent/children', token)
+      ]);
+      
+      setOverview(overviewData);
+      setChildren(childrenData);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      toast({
+        title: "Error loading data",
+        description: "Failed to load dashboard information",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createLinkCode = async () => {
+    if (!token) return;
+    
+    try {
+      setCreatingLink(true);
+      const result = await postJSON<LinkCodeCreateOut>('/api/parent/link-code/create', {}, token);
+      setLinkCode(result.code);
+      setLinkExpiry(result.expires_at);
+      
+      toast({
+        title: "Link code created!",
+        description: "Share this code with your child to connect them to your account"
+      });
+    } catch (error) {
+      console.error('Error creating link code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create link code",
+        variant: "destructive"
+      });
+    } finally {
+      setCreatingLink(false);
+    }
+  };
+
+  const copyLinkCode = () => {
+    if (linkCode) {
+      navigator.clipboard.writeText(linkCode);
+      toast({
+        title: "Copied!",
+        description: "Link code copied to clipboard"
+      });
+    }
+  };
+
+  const formatTimeUntilExpiry = (expiryTime: string) => {
+    const expiry = new Date(expiryTime);
+    const now = new Date();
+    const diff = expiry.getTime() - now.getTime();
+    
+    if (diff <= 0) return "Expired";
+    
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -65,10 +129,67 @@ const ParentDashboard = () => {
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 font-poppins">Dashboard</h1>
           <p className="text-gray-600 font-quicksand mt-1">Monitor your children's wellbeing</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 self-start sm:self-auto">
-          <Calendar className="w-4 h-4 mr-2" />
-          View Calendar
-        </Button>
+        
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 self-start sm:self-auto">
+              <Plus className="w-4 h-4 mr-2" />
+              Link Child
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Link a Child</DialogTitle>
+              <DialogDescription>
+                Create a code for your child to connect to your parent account.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {!linkCode ? (
+                <Button 
+                  onClick={createLinkCode} 
+                  disabled={creatingLink}
+                  className="w-full"
+                >
+                  {creatingLink ? "Creating..." : "Generate Link Code"}
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center p-6 bg-gray-50 rounded-lg">
+                    <div className="text-3xl font-mono font-bold text-blue-600 mb-2">
+                      {linkCode}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Share this code with your child
+                    </p>
+                    <Button 
+                      onClick={copyLinkCode}
+                      variant="outline"
+                      size="sm"
+                      className="mb-2"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy Code
+                    </Button>
+                    <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
+                      <Clock className="w-3 h-3" />
+                      Expires in {linkExpiry && formatTimeUntilExpiry(linkExpiry)}
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={createLinkCode} 
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Generate New Code
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Grid */}
@@ -78,7 +199,9 @@ const ParentDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-600 text-sm font-medium font-quicksand">Total Children</p>
-                <p className="text-2xl lg:text-3xl font-bold text-blue-800 font-poppins">2</p>
+                <p className="text-2xl lg:text-3xl font-bold text-blue-800 font-poppins">
+                  {children.length}
+                </p>
               </div>
               <Users className="w-8 h-8 text-blue-600" />
             </div>
@@ -89,8 +212,13 @@ const ParentDashboard = () => {
           <CardContent className="p-4 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-600 text-sm font-medium font-quicksand">Avg Mood Today</p>
-                <p className="text-2xl lg:text-3xl font-bold text-green-800 font-poppins">7.5</p>
+                <p className="text-green-600 text-sm font-medium font-quicksand">Avg Wellbeing</p>
+                <p className="text-2xl lg:text-3xl font-bold text-green-800 font-poppins">
+                  {overview?.children.length ? 
+                    Math.round(overview.children.reduce((acc, child) => 
+                      acc + (child.last_7_days[child.last_7_days.length - 1]?.wellbeing || 0), 0
+                    ) / overview.children.length * 10) / 10 : '—'}
+                </p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-600" />
             </div>
@@ -101,8 +229,10 @@ const ParentDashboard = () => {
           <CardContent className="p-4 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-orange-600 text-sm font-medium font-quicksand">Active Alerts</p>
-                <p className="text-2xl lg:text-3xl font-bold text-orange-800 font-poppins">1</p>
+                <p className="text-orange-600 text-sm font-medium font-quicksand">High Risk</p>
+                <p className="text-2xl lg:text-3xl font-bold text-orange-800 font-poppins">
+                  {overview?.children.filter(c => c.risk === 'high').length || 0}
+                </p>
               </div>
               <AlertTriangle className="w-8 h-8 text-orange-600" />
             </div>
@@ -113,8 +243,12 @@ const ParentDashboard = () => {
           <CardContent className="p-4 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-600 text-sm font-medium font-quicksand">Weekly Check-ins</p>
-                <p className="text-2xl lg:text-3xl font-bold text-purple-800 font-poppins">14</p>
+                <p className="text-purple-600 text-sm font-medium font-quicksand">Total Alerts</p>
+                <p className="text-2xl lg:text-3xl font-bold text-purple-800 font-poppins">
+                  {overview?.children.reduce((acc, child) => 
+                    acc + child.last_7_days.reduce((sum, day) => sum + day.high_risk_count, 0), 0
+                  ) || 0}
+                </p>
               </div>
               <Calendar className="w-8 h-8 text-purple-600" />
             </div>
@@ -122,128 +256,152 @@ const ParentDashboard = () => {
         </Card>
       </div>
 
-      {/* Charts and Cards Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Mood Trends Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="font-poppins">7-Day Mood Trends</CardTitle>
-            <CardDescription className="font-quicksand">
-              Track mood patterns over the past week
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 lg:h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={moodData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis domain={[0, 10]} />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Emma" 
-                    stroke="#3B82F6" 
-                    strokeWidth={3}
-                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Lucas" 
-                    stroke="#10B981" 
-                    strokeWidth={3}
-                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-poppins">
-              <Bell className="w-5 h-5" />
-              Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {notifications.map((notification) => (
-              <div 
-                key={notification.id}
-                className={`p-3 lg:p-4 rounded-lg border-l-4 ${
-                  notification.priority === 'high' 
-                    ? 'bg-red-50 border-red-400' 
-                    : 'bg-blue-50 border-blue-400'
-                }`}
-              >
-                <p className="text-sm font-medium text-gray-800 font-quicksand">
-                  {notification.message}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Children Summary Cards */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 font-poppins">Children Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-          {children.map((child) => (
-            <Card key={child.id} className="hover:shadow-lg transition-shadow duration-200">
-              <CardContent className="p-4 lg:p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="text-3xl lg:text-4xl">{child.avatar}</div>
+      {/* Children Overview */}
+      {overview && overview.children.length > 0 && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold text-gray-900 font-poppins">
+            Children Overview
+          </h2>
+          
+          <div className="grid gap-6">
+            {overview.children.map((child) => (
+              <Card key={child.child_id} className="hover:shadow-lg transition-shadow duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-6">
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-900 font-poppins">{child.name}</h3>
-                      <p className="text-sm text-gray-500 font-quicksand">Last active: {child.lastActivity}</p>
+                      <h3 className="text-xl font-semibold text-gray-900 font-poppins">
+                        {child.name}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <RiskBadge level={child.risk} />
+                      </div>
                     </div>
                   </div>
-                  {child.alertFlag && (
-                    <Badge variant="destructive" className="flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      Alert
-                    </Badge>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* 7-Day Sentiment Trend */}
+                    <Card className="bg-blue-50">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-blue-700">
+                          7-Day Sentiment Trend
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Sparkline 
+                          points={child.last_7_days.map(day => ({
+                            x: day.day,
+                            y: day.avg_sentiment
+                          }))}
+                          min={-1}
+                          max={1}
+                          height={40}
+                        />
+                        <p className="text-xs text-blue-600 mt-2">
+                          Latest: {(child.last_7_days[child.last_7_days.length - 1]?.avg_sentiment || 0).toFixed(2)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* 7-Day Wellbeing */}
+                    <Card className="bg-green-50">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-green-700">
+                          7-Day Wellbeing
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Sparkline 
+                          points={child.last_7_days.map(day => ({
+                            x: day.day,
+                            y: day.wellbeing
+                          }))}
+                          min={0}
+                          max={10}
+                          height={40}
+                        />
+                        <p className="text-xs text-green-600 mt-2">
+                          Current: {(child.last_7_days[child.last_7_days.length - 1]?.wellbeing || 0).toFixed(1)}/10
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  {/* Risk Events */}
+                  <div className="mt-4">
+                    <div className="text-sm text-gray-600">
+                      High risk events this week: {child.last_7_days.reduce((sum, day) => sum + day.high_risk_count, 0)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* No children state */}
+      {overview && overview.children.length === 0 && (
+        <Card className="text-center py-12">
+          <CardContent>
+            <div className="text-4xl mb-4">👶</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No children linked yet</h3>
+            <p className="text-gray-600 mb-4">Create a link code to connect with your child</p>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Link Your First Child
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Link a Child</DialogTitle>
+                  <DialogDescription>
+                    Create a code for your child to connect to your parent account.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  {!linkCode ? (
+                    <Button 
+                      onClick={createLinkCode} 
+                      disabled={creatingLink}
+                      className="w-full"
+                    >
+                      {creatingLink ? "Creating..." : "Generate Link Code"}
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-center p-6 bg-gray-50 rounded-lg">
+                        <div className="text-3xl font-mono font-bold text-blue-600 mb-2">
+                          {linkCode}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Share this code with your child
+                        </p>
+                        <Button 
+                          onClick={copyLinkCode}
+                          variant="outline"
+                          size="sm"
+                          className="mb-2"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy Code
+                        </Button>
+                        <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
+                          <Clock className="w-3 h-3" />
+                          Expires in {linkExpiry && formatTimeUntilExpiry(linkExpiry)}
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600 font-quicksand">Current Mood</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{child.currentMood}</span>
-                      <span className="text-sm font-semibold text-gray-700">{child.moodScore}/10</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600 font-quicksand">Check-in Streak</span>
-                    <span className="text-sm font-semibold text-blue-600">{child.streak} days</span>
-                  </div>
-                  
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${child.moodScore * 10}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
-                >
-                  View Details
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+      )}
+
     </div>
   );
 };

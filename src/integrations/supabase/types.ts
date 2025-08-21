@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -17,31 +17,37 @@ export type Database = {
       chat_messages: {
         Row: {
           child_id: string
+          content: string
           created_at: string | null
-          id: string
-          is_user: boolean
-          message: string
+          id: number
+          role: string
+          sentiment: number | null
+          triage_level: string | null
         }
         Insert: {
           child_id: string
+          content: string
           created_at?: string | null
-          id?: string
-          is_user?: boolean
-          message: string
+          id?: number
+          role: string
+          sentiment?: number | null
+          triage_level?: string | null
         }
         Update: {
           child_id?: string
+          content?: string
           created_at?: string | null
-          id?: string
-          is_user?: boolean
-          message?: string
+          id?: number
+          role?: string
+          sentiment?: number | null
+          triage_level?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "chat_messages_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "children"
             referencedColumns: ["id"]
           },
         ]
@@ -85,140 +91,161 @@ export type Database = {
           },
         ]
       }
+      family_links: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          parent_id: string
+          used_by_child: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          parent_id: string
+          used_by_child?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          parent_id?: string
+          used_by_child?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_links_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_links_used_by_child_fkey"
+            columns: ["used_by_child"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_events: {
         Row: {
-          event_type: string
-          id: string
-          session_id: string | null
-          timestamp: string | null
-          value: string | null
+          activity: string
+          child_id: string
+          created_at: string | null
+          delta: number | null
+          id: number
         }
         Insert: {
-          event_type: string
-          id?: string
-          session_id?: string | null
-          timestamp?: string | null
-          value?: string | null
+          activity: string
+          child_id: string
+          created_at?: string | null
+          delta?: number | null
+          id?: number
         }
         Update: {
-          event_type?: string
-          id?: string
-          session_id?: string | null
-          timestamp?: string | null
-          value?: string | null
+          activity?: string
+          child_id?: string
+          created_at?: string | null
+          delta?: number | null
+          id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "game_events_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "game_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      game_sessions: {
-        Row: {
-          child_id: string
-          created_at: string | null
-          end_time: string | null
-          game_name: string
-          id: string
-          mood_after: Database["public"]["Enums"]["mood_type"] | null
-          mood_before: Database["public"]["Enums"]["mood_type"] | null
-          start_time: string | null
-        }
-        Insert: {
-          child_id: string
-          created_at?: string | null
-          end_time?: string | null
-          game_name: string
-          id?: string
-          mood_after?: Database["public"]["Enums"]["mood_type"] | null
-          mood_before?: Database["public"]["Enums"]["mood_type"] | null
-          start_time?: string | null
-        }
-        Update: {
-          child_id?: string
-          created_at?: string | null
-          end_time?: string | null
-          game_name?: string
-          id?: string
-          mood_after?: Database["public"]["Enums"]["mood_type"] | null
-          mood_before?: Database["public"]["Enums"]["mood_type"] | null
-          start_time?: string | null
-        }
-        Relationships: []
-      }
-      journal_entries: {
-        Row: {
-          child_id: string
-          content: string
-          created_at: string | null
-          id: string
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          child_id: string
-          content: string
-          created_at?: string | null
-          id?: string
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          child_id?: string
-          content?: string
-          created_at?: string | null
-          id?: string
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "journal_entries_child_id_fkey"
+            foreignKeyName: "game_events_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "children"
             referencedColumns: ["id"]
           },
         ]
       }
-      mood_entries: {
+      journals: {
         Row: {
           child_id: string
           created_at: string | null
-          date: string
-          id: string
-          mood: Database["public"]["Enums"]["mood_type"]
+          id: number
+          sentiment: number | null
+          text: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          id?: number
+          sentiment?: number | null
+          text: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          id?: number
+          sentiment?: number | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journals_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moods: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          id: number
+          mood: string
+          mood_score: number
           note: string | null
         }
         Insert: {
           child_id: string
           created_at?: string | null
-          date?: string
-          id?: string
-          mood: Database["public"]["Enums"]["mood_type"]
+          id?: number
+          mood: string
+          mood_score: number
           note?: string | null
         }
         Update: {
           child_id?: string
           created_at?: string | null
-          date?: string
-          id?: string
-          mood?: Database["public"]["Enums"]["mood_type"]
+          id?: number
+          mood?: string
+          mood_score?: number
           note?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "mood_entries_child_id_fkey"
+            foreignKeyName: "moods_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "children"
             referencedColumns: ["id"]
           },
         ]
+      }
+      parents: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -243,6 +270,38 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      sentiment_daily: {
+        Row: {
+          avg_sentiment: number | null
+          child_id: string
+          day: string
+          high_risk_count: number | null
+          wellbeing_score: number | null
+        }
+        Insert: {
+          avg_sentiment?: number | null
+          child_id: string
+          day: string
+          high_risk_count?: number | null
+          wellbeing_score?: number | null
+        }
+        Update: {
+          avg_sentiment?: number | null
+          child_id?: string
+          day?: string
+          high_risk_count?: number | null
+          wellbeing_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sentiment_daily_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

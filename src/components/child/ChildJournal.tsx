@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Save, Sparkles, Edit3 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { BookOpen, Save, Sparkles } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useChild } from "@/contexts/ChildContext";
+import { useAuthToken } from "@/hooks/useAuthToken";
+import { postJSON } from "@/lib/api";
+import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ingestJournal } from "@/lib/api";
 
 const prompts = [
   "What made you smile today? 😊",

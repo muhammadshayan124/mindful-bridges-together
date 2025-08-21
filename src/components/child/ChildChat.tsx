@@ -3,9 +3,14 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, Bot, User, Heart, Sparkles } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { Send, Bot, User, Heart, ShieldAlert } from "lucide-react";
+import { useChild } from "@/contexts/ChildContext";
+import { useAuthToken } from "@/hooks/useAuthToken";
+import { postJSON } from "@/lib/api";
+import { ChatTurn, ChatOut } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import RiskBadge from "@/components/ui/RiskBadge";
+import SafetyPanel from "@/components/SafetyPanel";
 
 const TypingIndicator = () => {
   return (
@@ -24,11 +29,23 @@ const TypingIndicator = () => {
   );
 };
 
+interface Message {
+  id: number;
+  type: 'user' | 'bot';
+  message: string;
+  timestamp: string;
+  triage?: 'none'|'low'|'medium'|'high';
+}
+
 const ChildChat = () => {
-  const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
+  const { childId } = useChild();
+  const { token } = useAuthToken();
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [currentTriage, setCurrentTriage] = useState<'none'|'low'|'medium'|'high'>('none');
+  const [safetyLock, setSafetyLock] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -39,71 +56,70 @@ const ChildChat = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const saveMessageToSupabase = async (messageText: string, isUser: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          child_id: "USER_ID",  // replace with the actual user ID
-          message: messageText,
-          is_user: isUser,
-        });
-
-      if (error) {
-        console.error('Error saving message to Supabase:', error);
-      }
-    } catch (error) {
-      console.error('Error saving message to Supabase:', error);
-    }
-  };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !childId || !token || safetyLock) return;
 
-    const userMessage = {
+    const userMessage: Message = {
       id: messages.length + 1,
       type: "user",
       message: newMessage,
       timestamp: "Just now"
     };
 
-    setMessages([...messages, userMessage]);
-    setNewMessage("");  // Clear input field
+    setMessages(prev => [...prev, userMessage]);
+    const messageText = newMessage;
+    setNewMessage("");
     setIsTyping(true);
 
-    // Send data to the API
-    const payload = { text: userMessage.message };
-
     try {
-      const response = await fetch("https://mindfullbuddy-production.up.railway.app/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      // Build conversation history for context
+      const turns: ChatTurn[] = [
+        ...messages.slice(-10).map(msg => ({ // Last 10 messages for context
+          role: msg.type === 'user' ? 'user' as const : 'assistant' as const,
+          content: msg.message
+        })),
+        { role: 'user', content: messageText }
+      ];
 
-      const data = await response.json();
+      const chatResponse = await postJSON<ChatOut>('/api/chat', {
+        child_id: childId,
+        turns
+      }, token);
 
-      const botMessage = {
+      const botMessage: Message = {
         id: messages.length + 2,
         type: "bot",
-        message: data?.reply,
-        timestamp: "Just now"
+        message: chatResponse.reply,
+        timestamp: "Just now",
+        triage: chatResponse.triage
       };
 
       setMessages(prev => [...prev, botMessage]);
 
-      // Save both user and bot messages to Supabase
-      await saveMessageToSupabase(userMessage.message, true);
-      await saveMessageToSupabase(botMessage.message, false);
+      // Update triage status
+      if (chatResponse.triage) {
+        setCurrentTriage(chatResponse.triage);
+        if (chatResponse.triage === 'high') {
+          setSafetyLock(true);
+        }
+      }
+
     } catch (error) {
-      console.error("Error sending data:", error);
-      const botErrorMessage = {
+      console.error("Error sending message:", error);
+      const botErrorMessage: Message = {
         id: messages.length + 2,
         type: "bot",
-        message: "Oops, something went wrong! Please try again.",
+        message: "I'm having trouble connecting right now. Please try again in a moment.",
         timestamp: "Just now"
       };
       setMessages(prev => [...prev, botErrorMessage]);
+      
+      toast({
+        title: "Connection Error",
+        description: "Couldn't send your message. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsTyping(false);
     }
@@ -119,6 +135,23 @@ const ChildChat = () => {
   return (
     <div className="max-w-4xl mx-auto font-quicksand">
       <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-white/50 dark:border-gray-700/50 rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
+        {/* Chat Header */}
+        <div className="p-4 border-b bg-gradient-to-r from-white/90 to-blue-50/90 dark:from-gray-800/90 dark:to-gray-700/90 backdrop-blur-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Bot className="w-6 h-6 text-mindful-accent" />
+            <h2 className="font-semibold text-gray-900 dark:text-white">Mindful Buddy</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <RiskBadge level={currentTriage} />
+            {safetyLock && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs">
+                <ShieldAlert className="w-3 h-3" />
+                Safety mode
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Chat Messages */}
         <div className="h-[600px] overflow-y-auto p-8 space-y-6 bg-gradient-to-b from-white/30 to-transparent dark:from-gray-800/30">
           {messages.map((msg) => (
@@ -158,6 +191,7 @@ const ChildChat = () => {
           ))}
           
           {isTyping && <TypingIndicator />}
+          {safetyLock && <SafetyPanel childId={childId || ''} />}
           <div ref={messagesEndRef} />
         </div>
         
@@ -166,12 +200,12 @@ const ChildChat = () => {
           <div className="flex gap-4 items-end">
             <div className="flex-1 relative">
               <Input
-                placeholder="Share what's on your mind... 💭"
+                placeholder={safetyLock ? "Chat is paused for your safety" : "Share what's on your mind... 💭"}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="mindful-input-child child-focus text-base font-medium placeholder:text-gray-400 pr-12"
-                disabled={isTyping}
+                disabled={isTyping || safetyLock}
               />
               {newMessage && (
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -181,7 +215,7 @@ const ChildChat = () => {
             </div>
             <Button
               onClick={handleSendMessage}
-              disabled={isTyping || !newMessage.trim()}
+              disabled={isTyping || !newMessage.trim() || safetyLock}
               className="mindful-button-child w-16 h-16 p-0 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <Send className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-200" />

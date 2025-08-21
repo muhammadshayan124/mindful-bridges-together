@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ChildProvider } from "@/contexts/ChildContext";
 import Index from "./pages/Index";
 import AuthPage from "./components/auth/AuthPage";
 import ChildInterface from "./pages/ChildInterface";
@@ -20,9 +21,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+            <ChildProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<AuthPage />} />
@@ -45,6 +47,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
+            </ChildProvider>
           </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
