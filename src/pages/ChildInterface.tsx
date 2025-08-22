@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ChildNavbar from "@/components/child/ChildNavbar";
@@ -6,6 +5,7 @@ import ChildChat from "@/components/child/ChildChat";
 import ChildMood from "@/components/child/ChildMood";
 import ChildJournal from "@/components/child/ChildJournal";
 import ChildGames from "@/components/child/ChildGames";
+import ChildLinking from "@/components/child/ChildLinking";
 import ChatbotPanel from "@/components/child/ChatbotPanel";
 import BreathingBuddy from "@/components/child/games/BreathingBuddy";
 import EmotionDetective from "@/components/child/games/EmotionDetective";
@@ -13,9 +13,26 @@ import MindfulMaze from "@/components/child/games/MindfulMaze";
 import WorryWarriors from "@/components/child/games/WorryWarriors";
 import GratitudeGarden from "@/components/child/games/GratitudeGarden";
 import CopingCastle from "@/components/child/games/CopingCastle";
+import { useChild } from "@/contexts/ChildContext";
 
 const ChildInterface = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const { isLinked, loading } = useChild();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-child-primary/5 via-child-background to-child-secondary/5">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-child-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-child-primary font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLinked) {
+    return <ChildLinking />;
+  }
 
   return (
     <div className="min-h-screen child-interface font-quicksand animate-fade-in-up">

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { BookOpen, Save, Sparkles, Edit3 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { useChild } from "@/contexts/ChildContext";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuth } from "@/contexts/AuthContext";
 import { postJSON } from "@/lib/api";
 import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +40,7 @@ const ChildJournal = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { childId } = useChild();
-  const { token } = useAuthToken();
+  const { session } = useAuth();
   const { toast } = useToast();
 
   // For now, we'll keep entries in local state since this is a demo
@@ -58,7 +58,7 @@ const ChildJournal = () => {
   };
 
   const saveEntry = async () => {
-    if (!childId || !token || !journalEntry.trim() || !journalTitle.trim()) {
+    if (!childId || !session?.access_token || !journalEntry.trim() || !journalTitle.trim()) {
       toast({
         title: "Missing information",
         description: "Please add both a title and some content to your journal entry",
@@ -70,12 +70,11 @@ const ChildJournal = () => {
     try {
       setSaving(true);
       
-      // For now, we'll just save to local state and call the API
-      // In a real app, you'd have separate endpoints for CRUD operations
-      const response = await postJSON<OkOut>('/api/ingest/journal', {
+      // Call the real API endpoint
+      const response = await postJSON<OkOut>('/api/journal', {
         child_id: childId,
         text: journalEntry
-      }, token);
+      }, session.access_token);
 
       // Add to local entries
       const newEntry: JournalEntry = {

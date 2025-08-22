@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, Bot, Heart, ThumbsUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DiagnosticPanel } from "./DiagnosticPanel";
 
 type Turn = { role: 'user' | 'assistant'; content: string };
 
@@ -112,25 +113,23 @@ export default function ChildChat() {
         </Card>
       )}
 
-      {/* Connection Status card */}
+      {/* Diagnostic Panel */}
       <details className="text-sm">
         <summary className="cursor-pointer text-muted-foreground">Connection Status</summary>
-        <Card className="mt-2">
-          <CardContent className="p-4 space-y-2">
-            <div>API Base: <code className="text-xs bg-muted px-2 py-1 rounded">{API_BASE}</code></div>
-            <div>Child ID: <code className="text-xs bg-muted px-2 py-1 rounded">{childId ?? '(none)'}</code></div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { 
-                clearChatDiscoveryCache(); 
-                toast({ title: "Cache cleared", description: "Endpoint cache has been reset" });
-              }}
-            >
-              Clear endpoint cache
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="mt-2">
+          <DiagnosticPanel />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { 
+              clearChatDiscoveryCache(); 
+              toast({ title: "Cache cleared", description: "Endpoint cache has been reset" });
+            }}
+            className="w-full"
+          >
+            Clear endpoint cache
+          </Button>
+        </div>
       </details>
 
       {/* Chat transcript */}

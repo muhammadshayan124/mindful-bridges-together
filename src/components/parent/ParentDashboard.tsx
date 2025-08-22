@@ -11,12 +11,16 @@ import RiskBadge from "@/components/ui/RiskBadge";
 import { Heart, MessageCircle, BookOpen, TrendingUp, Calendar, Bell, RefreshCw, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export default function ParentDashboard() {
+interface ParentDashboardProps {
+  parentData?: ParentOverview;
+}
+
+export default function ParentDashboard({ parentData }: ParentDashboardProps = {}) {
   const { user } = useAuth();
   const { token } = useAuthToken();
   const { toast } = useToast();
-  const [overview, setOverview] = useState<ParentOverview | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<ParentOverview | null>(parentData || null);
+  const [loading, setLoading] = useState(!parentData);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
@@ -51,8 +55,10 @@ export default function ParentDashboard() {
   };
 
   useEffect(() => {
-    loadOverview();
-  }, [user, token]);
+    if (!parentData) {
+      loadOverview();
+    }
+  }, [user, token, parentData]);
 
   if (loading) {
     return (
