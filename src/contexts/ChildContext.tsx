@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuthToken } from '@/hooks/useAuthToken';
-import { getJSON, postJSON } from '@/lib/api';
-import { LinkCodeConsumeIn } from '@/types';
+import { assignChild } from '@/lib/api';
 
 interface ChildContextType {
   childId: string | null;
@@ -35,20 +34,25 @@ export const ChildProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLoading(false);
   }, [token]);
 
+  const generateChildId = () => {
+    return 'child_' + Math.random().toString(36).substr(2, 9);
+  };
+
   const linkToParent = async (code: string, displayName: string) => {
     if (!token) throw new Error('Not authenticated');
     
-    const payload: LinkCodeConsumeIn = { code, display_name: displayName };
-    const result = await postJSON<{ child_id: string; parent_name: string }>('/api/child/link-code/consume', payload, token);
+    await assignChild(code, displayName, token);
     
-    setChildId(result.child_id);
+    // Generate and set child ID
+    const newChildId = generateChildId();
+    setChildId(newChildId);
     setDisplayName(displayName);
-    setParentName(result.parent_name);
+    setParentName("Connected Parent");
     
     // Store in localStorage
-    localStorage.setItem('child_id', result.child_id);
+    localStorage.setItem('child_id', newChildId);
     localStorage.setItem('child_display_name', displayName);
-    localStorage.setItem('child_parent_name', result.parent_name);
+    localStorage.setItem('child_parent_name', "Connected Parent");
   };
 
   const value = {

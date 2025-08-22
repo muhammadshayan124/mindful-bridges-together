@@ -12,12 +12,15 @@ import ParentInterface from "./pages/ParentInterface";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { useConnectionToast } from "@/components/ToastNotification";
 
 const queryClient = new QueryClient();
 
 function App() {
+  useConnectionToast();
+  
   return (
-    <ThemeProvider defaultTheme="system" storageKey="mindful-app-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="mindful-app-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>

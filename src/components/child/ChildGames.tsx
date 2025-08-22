@@ -1,172 +1,353 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gamepad2, Puzzle, Heart, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { ThemeToggle } from "../ThemeToggle";
+import { Badge } from "@/components/ui/badge";
+import { useGameTelemetry } from "@/hooks/useGameTelemetry";
+import { useChild } from "@/contexts/ChildContext";
+import { useAuthToken } from "@/hooks/useAuthToken";
+import { getGames } from "@/lib/api";
+import { Heart, Star, Play, CheckCircle, Trophy, Gamepad2, Loader2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useToast } from "@/hooks/use-toast";
 
-const games = [
+// Import game components
+import BreathingBuddy from "./games/BreathingBuddy";
+import CopingCastle from "./games/CopingCastle";
+import EmotionDetective from "./games/EmotionDetective";
+import GratitudeGarden from "./games/GratitudeGarden";
+import MindfulMaze from "./games/MindfulMaze";
+import WorryWarriors from "./games/WorryWarriors";
+
+type Game = {
+  id: string;
+  title: string;
+  description: string;
+  category: 'mindfulness' | 'coping' | 'emotions' | 'creativity';
+  difficulty: 'easy' | 'medium' | 'hard';
+  estimatedTime: string;
+  skills: string[];
+  component?: React.ComponentType<{ onComplete: () => void }>;
+};
+
+const localGames: Game[] = [
   {
-    id: 1,
-    title: "Breathing Buddy",
-    description: "Learn calming breathing exercises with your friendly guide",
-    icon: Heart,
-    color: "from-peach-400 via-peach-300 to-mint-400",
-    borderColor: "border-peach-200 dark:border-peach-700",
-    difficulty: "Easy",
-    time: "5 min",
-    route: "/child/games/breathing-buddy",
-    emoji: "💨"
+    id: 'breathing-buddy',
+    title: 'Breathing Buddy',
+    description: 'Learn calming breathing techniques with your animated friend',
+    category: 'mindfulness',
+    difficulty: 'easy',
+    estimatedTime: '5 minutes',
+    skills: ['Deep Breathing', 'Relaxation', 'Focus'],
+    component: BreathingBuddy
   },
   {
-    id: 2,
-    title: "Emotion Detective",
-    description: "Help characters identify their feelings in different situations",
-    icon: Puzzle,
-    color: "from-calm-400 via-lavender-300 to-calm-500",
-    borderColor: "border-calm-200 dark:border-calm-700",
-    difficulty: "Medium",
-    time: "10 min",
-    route: "/child/games/emotion-detective",
-    emoji: "🕵️"
+    id: 'emotion-detective',
+    title: 'Emotion Detective',
+    description: 'Discover and identify different emotions through fun scenarios',
+    category: 'emotions',
+    difficulty: 'medium',
+    estimatedTime: '10 minutes',
+    skills: ['Emotion Recognition', 'Empathy', 'Self-Awareness'],
+    component: EmotionDetective
   },
   {
-    id: 3,
-    title: "Mindful Maze",
-    description: "Navigate through peaceful mazes while practicing mindfulness",
-    icon: Star,
-    color: "from-mint-400 via-calm-300 to-mint-500",
-    borderColor: "border-mint-200 dark:border-mint-700",
-    difficulty: "Easy",
-    time: "8 min",
-    route: "/child/games/mindful-maze",
-    emoji: "🧘‍♀️"
+    id: 'gratitude-garden',
+    title: 'Gratitude Garden',
+    description: 'Plant seeds of gratitude and watch your garden grow',
+    category: 'mindfulness',
+    difficulty: 'easy',
+    estimatedTime: '8 minutes',
+    skills: ['Gratitude', 'Positivity', 'Reflection'],
+    component: GratitudeGarden
   },
   {
-    id: 4,
-    title: "Worry Warriors",
-    description: "Transform your worries into positive thoughts with superhero friends",
-    icon: Gamepad2,
-    color: "from-peach-400 via-peach-300 to-lavender-400",
-    borderColor: "border-peach-200 dark:border-peach-700",
-    difficulty: "Medium",
-    time: "15 min",
-    route: "/child/games/worry-warriors",
-    emoji: "🦸‍♂️"
+    id: 'coping-castle',
+    title: 'Coping Castle',
+    description: 'Build your fortress of coping strategies and emotional strength',
+    category: 'coping',
+    difficulty: 'medium',
+    estimatedTime: '15 minutes',
+    skills: ['Coping Strategies', 'Problem Solving', 'Resilience'],
+    component: CopingCastle
   },
   {
-    id: 5,
-    title: "Gratitude Garden",
-    description: "Plant and grow beautiful flowers by sharing things you're grateful for",
-    icon: Heart,
-    color: "from-mint-400 via-mint-300 to-calm-400",
-    borderColor: "border-mint-200 dark:border-mint-700",
-    difficulty: "Easy",
-    time: "7 min",
-    route: "/child/games/gratitude-garden",
-    emoji: "🌸"
+    id: 'mindful-maze',
+    title: 'Mindful Maze',
+    description: 'Navigate through challenges using mindfulness techniques',
+    category: 'mindfulness',
+    difficulty: 'hard',
+    estimatedTime: '12 minutes',
+    skills: ['Mindfulness', 'Focus', 'Decision Making'],
+    component: MindfulMaze
   },
   {
-    id: 6,
-    title: "Coping Castle",
-    description: "Build your fortress of coping strategies to handle tough situations",
-    icon: Star,
-    color: "from-lavender-400 via-lavender-300 to-peach-400",
-    borderColor: "border-lavender-200 dark:border-lavender-700",
-    difficulty: "Hard",
-    time: "20 min",
-    route: "/child/games/coping-castle",
-    emoji: "🏰"
+    id: 'worry-warriors',
+    title: 'Worry Warriors',
+    description: 'Transform worries into strength with superhero strategies',
+    category: 'coping',
+    difficulty: 'medium',
+    estimatedTime: '10 minutes',
+    skills: ['Anxiety Management', 'Confidence', 'Problem Solving'],
+    component: WorryWarriors
   }
 ];
 
-const ChildGames = () => {
-  const navigate = useNavigate();
+export default function ChildGames() {
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [completedGames, setCompletedGames] = useState<string[]>([]);
+  const [games, setGames] = useState<Game[]>(localGames);
+  const [loading, setLoading] = useState(true);
+  const { startSession, endSession } = useGameTelemetry();
+  const { childId } = useChild();
+  const { token } = useAuthToken();
+  const { toast } = useToast();
 
-  const handlePlayGame = (route: string) => {
-    navigate(route);
+  useEffect(() => {
+    const loadGames = async () => {
+      try {
+        // Load favorites and completed games from localStorage
+        const savedFavorites = localStorage.getItem('childGameFavorites');
+        const savedCompleted = localStorage.getItem('childCompletedGames');
+        
+        if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
+        if (savedCompleted) setCompletedGames(JSON.parse(savedCompleted));
+
+        // Try to load games from backend
+        if (token) {
+          const backendGames = await getGames(token);
+          // Merge backend games with local games, prioritizing backend
+          const mergedGames = [...localGames];
+          backendGames.forEach((bgame: any) => {
+            const existingIndex = mergedGames.findIndex(g => g.id === bgame.id);
+            if (existingIndex >= 0) {
+              mergedGames[existingIndex] = { ...mergedGames[existingIndex], ...bgame };
+            } else {
+              mergedGames.push({
+                id: bgame.id,
+                title: bgame.title || bgame.name,
+                description: bgame.description,
+                category: bgame.category || 'creativity',
+                difficulty: bgame.difficulty || 'medium',
+                estimatedTime: bgame.estimatedTime || '10 minutes',
+                skills: bgame.skills || []
+              });
+            }
+          });
+          setGames(mergedGames);
+        }
+      } catch (error) {
+        console.warn('Could not load games from backend, using local games:', error);
+        setGames(localGames);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGames();
+  }, [token]);
+
+  const toggleFavorite = (gameId: string) => {
+    const newFavorites = favorites.includes(gameId) 
+      ? favorites.filter(id => id !== gameId)
+      : [...favorites, gameId];
+    
+    setFavorites(newFavorites);
+    localStorage.setItem('childGameFavorites', JSON.stringify(newFavorites));
+    
+    // Track game interaction
   };
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-6 p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div className="text-center flex-1">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-calm-600 via-lavender-600 to-mint-600 dark:from-calm-400 dark:via-lavender-400 dark:to-mint-400 bg-clip-text text-transparent mb-3 animate-float">
-            Fun & Mindful Games 🎮
-          </h1>
-          <p className="text-lg text-serenity-600 dark:text-serenity-300 font-medium">
-            Play games that help you learn about emotions and stay calm ✨
-          </p>
-        </div>
-        <ThemeToggle />
-      </div>
+  const startGame = (game: Game) => {
+    setSelectedGame(game);
+    if (childId) {
+      startSession();
+    }
+  };
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {games.map((game, index) => {
-          const Icon = game.icon;
-          return (
-            <Card
-              key={game.id}
-              className={`game-card relative bg-white/90 dark:bg-serenity-800/90 backdrop-blur-sm border-2 ${game.borderColor} rounded-3xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 animate-in fade-in slide-in-from-bottom-4`}
-              style={{ animationDelay: `${index * 100}ms` }}
+  const completeGame = (gameId: string) => {
+    const newCompleted = [...completedGames, gameId];
+    setCompletedGames(newCompleted);
+    localStorage.setItem('childCompletedGames', JSON.stringify(newCompleted));
+    
+    if (childId) {
+      endSession(gameId, 100);
+    }
+
+    toast({
+      title: "🎉 Game Complete!",
+      description: "Great job! You're building amazing skills.",
+    });
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'mindfulness': return 'bg-accent/20 text-accent-foreground border-accent';
+      case 'coping': return 'bg-primary/20 text-primary-foreground border-primary';
+      case 'emotions': return 'bg-secondary/20 text-secondary-foreground border-secondary';
+      case 'creativity': return 'bg-muted text-muted-foreground border-muted';
+      default: return 'bg-muted text-muted-foreground border-muted';
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy': return 'bg-green-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'hard': return 'bg-red-500';
+      default: return 'bg-muted-foreground';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="p-8">
+          <CardContent className="flex items-center gap-4">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span>Loading your games...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (selectedGame) {
+    const GameComponent = selectedGame.component;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-4">
+          <div className="flex justify-between items-center mb-6">
+            <Button
+              onClick={() => setSelectedGame(null)}
+              variant="outline"
+              className="mb-4 rounded-2xl"
             >
-              <CardHeader className="text-center pb-4 relative overflow-hidden">
-                <div className={`w-20 h-20 bg-gradient-to-r ${game.color} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse-glow relative`}>
-                  <Icon className="w-10 h-10 text-white drop-shadow-lg" />
-                  <div className="absolute -top-2 -right-2 text-2xl animate-bounce">
-                    {game.emoji}
-                  </div>
+              ← Back to Games
+            </Button>
+            <ThemeToggle />
+          </div>
+          
+          {GameComponent && (
+            <GameComponent onComplete={() => completeGame(selectedGame.id)} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Fun Learning Games 🎮</h1>
+            <p className="text-muted-foreground text-lg">
+              Explore games that help you learn about emotions, mindfulness, and coping skills
+            </p>
+          </div>
+          <ThemeToggle />
+        </div>
+
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-card shadow-md rounded-2xl">
+            <CardContent className="p-6 text-center">
+              <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold">{completedGames.length}</div>
+              <div className="text-sm text-muted-foreground">Games Completed</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card shadow-md rounded-2xl">
+            <CardContent className="p-6 text-center">
+              <Heart className="w-8 h-8 text-red-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold">{favorites.length}</div>
+              <div className="text-sm text-muted-foreground">Favorite Games</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card shadow-md rounded-2xl">
+            <CardContent className="p-6 text-center">
+              <Gamepad2 className="w-8 h-8 text-primary mx-auto mb-2" />
+              <div className="text-2xl font-bold">{games.length}</div>
+              <div className="text-sm text-muted-foreground">Available Games</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Games Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {games.map((game) => (
+            <Card key={game.id} className="relative overflow-hidden hover:shadow-lg transition-all duration-200 bg-card rounded-2xl">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start mb-2">
+                  <Badge className={getCategoryColor(game.category)}>
+                    {game.category}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => toggleFavorite(game.id)}
+                    className="h-8 w-8 p-0 rounded-full"
+                  >
+                    <Heart 
+                      className={`w-4 h-4 ${
+                        favorites.includes(game.id) 
+                          ? 'fill-red-500 text-red-500' 
+                          : 'text-muted-foreground hover:text-red-400'
+                      }`}
+                    />
+                  </Button>
                 </div>
-                <CardTitle className="text-xl text-serenity-800 dark:text-serenity-100 mb-3 font-poppins">
+                
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
                   {game.title}
+                  {completedGames.includes(game.id) && (
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                  )}
                 </CardTitle>
-                <div className="flex justify-center gap-3 text-xs">
-                  <span className="px-3 py-1 bg-calm-100 dark:bg-calm-800 text-calm-700 dark:text-calm-300 rounded-full font-semibold">
-                    {game.difficulty}
-                  </span>
-                  <span className="px-3 py-1 bg-mint-100 dark:bg-mint-800 text-mint-700 dark:text-mint-300 rounded-full font-semibold">
-                    {game.time}
+                
+                <CardDescription className="text-muted-foreground">
+                  {game.description}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="pt-0 space-y-4">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className={`w-3 h-3 rounded-full ${getDifficultyColor(game.difficulty)}`}
+                  />
+                  <span className="text-sm text-muted-foreground capitalize">
+                    {game.difficulty} • {game.estimatedTime}
                   </span>
                 </div>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <p className="text-sm text-serenity-600 dark:text-serenity-300 leading-relaxed font-medium">
-                  {game.description}
-                </p>
+                
+                <div className="flex flex-wrap gap-1">
+                  {game.skills.map((skill) => (
+                    <Badge 
+                      key={skill} 
+                      variant="outline" 
+                      className="text-xs"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+                
                 <Button
-                  onClick={() => handlePlayGame(game.route)}
-                  className={`w-full interactive-button bg-gradient-to-r ${game.color} hover:shadow-lg text-white rounded-2xl font-bold py-3 text-base transition-all duration-300 transform hover:scale-105 active:scale-95`}
+                  onClick={() => startGame(game)}
+                  className="w-full rounded-xl"
+                  size="lg"
                 >
-                  Play Now! 🚀
+                  <Play className="w-4 h-4 mr-2" />
+                  {completedGames.includes(game.id) ? 'Play Again' : 'Start Game'}
                 </Button>
               </CardContent>
             </Card>
-          );
-        })}
+          ))}
+        </div>
       </div>
-
-      <Card className="bg-gradient-to-r from-calm-100/80 via-lavender-100/80 to-mint-100/80 dark:from-serenity-800/80 dark:via-serenity-700/80 dark:to-serenity-800/80 backdrop-blur-sm border-2 border-calm-200 dark:border-serenity-600 rounded-3xl animate-shimmer">
-        <CardContent className="p-8 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-shimmer opacity-20 animate-shimmer"></div>
-          <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-calm-700 dark:text-calm-300 mb-3 flex items-center justify-center gap-2">
-              Coming Soon! 
-              <span className="sparkle-animation text-3xl">🌟</span>
-            </h3>
-            <p className="text-calm-600 dark:text-calm-400 mb-6 text-lg font-medium">
-              More exciting games are on their way! Tell us what kind of games you'd like to play.
-            </p>
-            <Button 
-              variant="outline" 
-              className="interactive-button border-2 border-calm-400 dark:border-calm-500 text-calm-700 dark:text-calm-300 bg-white/50 dark:bg-serenity-800/50 backdrop-blur-sm rounded-2xl px-6 py-3 font-semibold hover:bg-calm-50 dark:hover:bg-serenity-700"
-            >
-              Suggest a Game 💡
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
-};
-
-export default ChildGames;
+}
