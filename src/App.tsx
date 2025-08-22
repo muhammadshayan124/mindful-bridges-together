@@ -12,44 +12,44 @@ import ParentInterface from "./pages/ParentInterface";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { useConnectionToast } from "@/components/ToastNotification";
+import AppWithToast from "./components/AppWithToast";
 
 const queryClient = new QueryClient();
 
 function App() {
-  useConnectionToast();
-  
   return (
     <ThemeProvider defaultTheme="dark" storageKey="mindful-app-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>
             <ChildProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route 
-                  path="/child/*" 
-                  element={
-                    <ProtectedRoute requiredRole="child">
-                      <ChildInterface />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/parent/*" 
-                  element={
-                    <ProtectedRoute requiredRole="parent">
-                      <ParentInterface />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+              <AppWithToast>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route 
+                    path="/child/*" 
+                    element={
+                      <ProtectedRoute requiredRole="child">
+                        <ChildInterface />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/parent/*" 
+                    element={
+                      <ProtectedRoute requiredRole="parent">
+                        <ParentInterface />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+              </AppWithToast>
             </ChildProvider>
           </AuthProvider>
         </TooltipProvider>

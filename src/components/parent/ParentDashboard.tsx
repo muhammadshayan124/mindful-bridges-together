@@ -123,7 +123,7 @@ export default function ParentDashboard() {
                     ID: {child.child_id.slice(-8)}
                   </CardDescription>
                 </div>
-                <RiskBadge risk={child.risk} />
+                <RiskBadge level={child.risk} />
               </div>
             </CardHeader>
             
@@ -136,8 +136,7 @@ export default function ParentDashboard() {
                 </div>
                 <div className="h-16 bg-muted/30 rounded-lg p-2">
                   <Sparkline 
-                    data={child.last_7_days.map(d => d.avg_sentiment)} 
-                    className="w-full h-full"
+                    points={child.last_7_days.map((d, i) => ({ x: i, y: d.avg_sentiment }))}
                   />
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">

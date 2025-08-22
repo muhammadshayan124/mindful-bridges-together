@@ -6,7 +6,7 @@ import { Calendar, Heart, Save } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { useChild } from "@/contexts/ChildContext";
 import { useAuthToken } from "@/hooks/useAuthToken";
-import { postJSON } from "@/lib/api";
+import { submitMood } from "@/lib/api";
 import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,12 +41,13 @@ const ChildMood = () => {
     try {
       setSaving(true);
       
-      await postJSON<OkOut>('/api/ingest/mood', {
-        child_id: childId,
-        mood: selectedMood,
-        mood_score: getMoodScore(selectedMood),
-        note: moodNote.trim() || undefined
-      }, token);
+      await submitMood(
+        childId,
+        selectedMood,
+        getMoodScore(selectedMood),
+        moodNote.trim() || undefined,
+        token
+      );
 
       toast({
         title: "Mood saved! 🌟",

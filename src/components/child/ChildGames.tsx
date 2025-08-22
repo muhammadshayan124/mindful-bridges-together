@@ -98,9 +98,9 @@ export default function ChildGames() {
   const [completedGames, setCompletedGames] = useState<string[]>([]);
   const [games, setGames] = useState<Game[]>(localGames);
   const [loading, setLoading] = useState(true);
-  const { startSession, endSession } = useGameTelemetry();
   const { childId } = useChild();
   const { token } = useAuthToken();
+  const { startSession, endSession } = useGameTelemetry(childId || '', token || '');
   const { toast } = useToast();
 
   useEffect(() => {

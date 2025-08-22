@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-export function useConnectionToast() {
+function AppWithToast({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
@@ -18,4 +18,8 @@ export function useConnectionToast() {
       }, 2000);
     }
   }, [toast]);
+
+  return <>{children}</>;
 }
+
+export default AppWithToast;
