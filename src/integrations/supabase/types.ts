@@ -59,6 +59,7 @@ export type Database = {
           id: string
           parent_id: string
           relationship: string | null
+          user_id: string | null
         }
         Insert: {
           child_id: string
@@ -66,6 +67,7 @@ export type Database = {
           id?: string
           parent_id: string
           relationship?: string | null
+          user_id?: string | null
         }
         Update: {
           child_id?: string
@@ -73,6 +75,7 @@ export type Database = {
           id?: string
           parent_id?: string
           relationship?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -308,7 +311,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_child_linked_to_user: {
+        Args: { target_child_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       mood_type: "very_sad" | "sad" | "neutral" | "happy" | "very_happy"
