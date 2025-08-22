@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuth } from "@/contexts/AuthContext";
 import { useChild } from "@/contexts/ChildContext";
 import { smartSendChat, clearChatDiscoveryCache } from "@/lib/chatTransport";
 import { API_BASE } from "@/lib/api";
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 type Turn = { role: 'user' | 'assistant'; content: string };
 
 export default function ChildChat() {
-  const { token } = useAuthToken();
+  const { session } = useAuth();
   const { childId } = useChild();
   const { toast } = useToast();
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -22,7 +22,7 @@ export default function ChildChat() {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const canSend = useMemo(() => input.trim().length > 0 && !!childId && !!token, [input, childId, token]);
+  const canSend = useMemo(() => input.trim().length > 0 && !!childId && !!session?.access_token, [input, childId, session]);
 
   useEffect(() => { 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); 
@@ -58,8 +58,11 @@ export default function ChildChat() {
     setSending(true);
     
     try {
+      const token = session?.access_token;
+      if (!token) throw new Error('Not authenticated');
+      
       const { replyText } = await smartSendChat(
-        token!, childId!, [...turns, userTurn], API_BASE
+        token, childId!, [...turns, userTurn], API_BASE
       );
       await typeMessage(replyText);
     } catch (e: any) {
@@ -97,11 +100,11 @@ export default function ChildChat() {
       </Card>
 
       {/* Diagnostics banner */}
-      {(!childId || !token || error) && (
+      {(!childId || !session?.access_token || error) && (
         <Card className="bg-destructive/10 border-destructive">
           <CardContent className="p-4">
             <div className="text-destructive text-sm space-y-1">
-              {!token && <div>Missing auth token. Please sign in again.</div>}
+              {!session?.access_token && <div>Missing auth token. Please sign in again.</div>}
               {!childId && <div>No child is linked. Enter a link code first.</div>}
               {error && <div><strong>Chat error:</strong> {error}</div>}
             </div>

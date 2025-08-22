@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuthToken } from '@/hooks/useAuthToken';
+import { useAuth } from '@/contexts/AuthContext';
 import { assignChild } from '@/lib/api';
 
 interface ChildContextType {
@@ -18,7 +18,7 @@ export const ChildProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [parentName, setParentName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { token } = useAuthToken();
+  const { session } = useAuth();
 
   // Load child data from localStorage and validate with backend
   useEffect(() => {
@@ -26,19 +26,20 @@ export const ChildProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const storedDisplayName = localStorage.getItem('child_display_name');
     const storedParentName = localStorage.getItem('child_parent_name');
     
-    if (storedChildId && token) {
+    if (storedChildId) {
       setChildId(storedChildId);
       setDisplayName(storedDisplayName);
       setParentName(storedParentName);
     }
     setLoading(false);
-  }, [token]);
+  }, []);
 
   const generateChildId = () => {
     return 'child_' + Math.random().toString(36).substr(2, 9);
   };
 
   const linkToParent = async (code: string, displayName: string) => {
+    const token = session?.access_token;
     if (!token) throw new Error('Not authenticated');
     
     await assignChild(code, displayName, token);

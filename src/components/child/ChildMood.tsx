@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Heart, Save } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import { useChild } from "@/contexts/ChildContext";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuth } from "@/contexts/AuthContext";
 import { submitMood } from "@/lib/api";
 import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -30,12 +30,13 @@ const ChildMood = () => {
   const [moodNote, setMoodNote] = useState("");
   const [saving, setSaving] = useState(false);
   const { childId } = useChild();
-  const { token } = useAuthToken();
+  const { session } = useAuth();
   const { toast } = useToast();
 
   const today = new Date().toLocaleDateString();
 
   const saveMood = async () => {
+    const token = session?.access_token;
     if (!childId || !selectedMood || !token) return;
 
     try {

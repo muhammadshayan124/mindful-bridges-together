@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGameTelemetry } from "@/hooks/useGameTelemetry";
 import { useChild } from "@/contexts/ChildContext";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuth } from "@/contexts/AuthContext";
 import { getGames } from "@/lib/api";
 import { Heart, Star, Play, CheckCircle, Trophy, Gamepad2, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -99,8 +99,8 @@ export default function ChildGames() {
   const [games, setGames] = useState<Game[]>(localGames);
   const [loading, setLoading] = useState(true);
   const { childId } = useChild();
-  const { token } = useAuthToken();
-  const { startSession, endSession } = useGameTelemetry(childId || '', token || '');
+  const { session } = useAuth();
+  const { startSession, endSession } = useGameTelemetry(childId || '', session?.access_token || '');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -114,8 +114,8 @@ export default function ChildGames() {
         if (savedCompleted) setCompletedGames(JSON.parse(savedCompleted));
 
         // Try to load games from backend
-        if (token) {
-          const backendGames = await getGames(token);
+        if (session?.access_token) {
+          const backendGames = await getGames(session.access_token);
           // Merge backend games with local games, prioritizing backend
           const mergedGames = [...localGames];
           backendGames.forEach((bgame: any) => {
@@ -145,7 +145,7 @@ export default function ChildGames() {
     };
 
     loadGames();
-  }, [token]);
+  }, [session]);
 
   const toggleFavorite = (gameId: string) => {
     const newFavorites = favorites.includes(gameId) 
