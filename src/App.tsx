@@ -13,22 +13,30 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import AppWithToast from "./components/AppWithToast";
-import { useEffect } from "react";
-import { health } from "@/lib/api";
+import { BackendStatus } from "./components/BackendStatus";
+import { useEffect, useState } from "react";
+import { health, API_BASE } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
 
 function App() {
   const { toast } = useToast();
+  const [showDevBanner, setShowDevBanner] = useState(false);
 
   useEffect(() => {
     // Health check on app start
     const checkBackendHealth = async () => {
       try {
-        const isHealthy = await health();
-        if (!isHealthy) {
-          console.warn('Backend unreachable at startup');
+        const result = await health();
+        if (!result.ok) {
+          const errorMsg = `Backend unreachable at VITE_API_BASE: ${API_BASE || 'not configured'}`;
+          console.warn(errorMsg, result);
+          
+          if (import.meta.env.DEV) {
+            setShowDevBanner(true);
+          }
+          
           toast({
             title: "Backend unreachable",
             description: "Some features may not work properly. Please try again later.",
@@ -75,6 +83,7 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
+              <BackendStatus />
               </AppWithToast>
             </ChildProvider>
           </AuthProvider>

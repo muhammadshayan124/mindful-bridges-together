@@ -12,16 +12,18 @@ export function requireToken(token?: string) {
 export type Jsonish = Record<string, any>;
 
 // Health check helper
-export async function health(): Promise<boolean> {
+export async function health(): Promise<{ ok: boolean; status: number; error?: string }> {
   try {
     if (!API_BASE) {
-      console.warn('VITE_API_BASE not configured');
-      return false;
+      const error = 'VITE_API_BASE not configured';
+      console.warn(error);
+      return { ok: false, status: 0, error };
     }
     const res = await fetch(`${API_BASE}/healthz`);
-    return res.ok;
-  } catch {
-    return false;
+    return { ok: res.ok, status: res.status };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Network error';
+    return { ok: false, status: 0, error: errorMsg };
   }
 }
 
