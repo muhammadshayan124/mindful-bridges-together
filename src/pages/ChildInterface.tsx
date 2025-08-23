@@ -17,15 +17,6 @@ import { useChild } from "@/contexts/ChildContext";
 
 const ChildInterface = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  
-  // Temporarily move the useChild hook inside a component that's guaranteed to be within the provider
-  return <ChildInterfaceContent isChatbotOpen={isChatbotOpen} setIsChatbotOpen={setIsChatbotOpen} />;
-};
-
-const ChildInterfaceContent = ({ isChatbotOpen, setIsChatbotOpen }: { 
-  isChatbotOpen: boolean; 
-  setIsChatbotOpen: (open: boolean) => void; 
-}) => {
   const { isLinked, loading } = useChild();
 
   if (loading) {
@@ -64,7 +55,7 @@ const ChildInterfaceContent = ({ isChatbotOpen, setIsChatbotOpen }: {
       <ChildNavbar />
       <div className="pt-24 px-4 pb-8 relative z-10">
         <Routes>
-          <Route path="/" element={<Navigate to="/child/link" replace />} />
+          <Route path="/" element={<Navigate to="/child/chat" replace />} />
           <Route path="/link" element={<ChildLinking />} />
           <Route path="/chat" element={<ChildChat />} />
           <Route path="/mood" element={<ChildMood />} />

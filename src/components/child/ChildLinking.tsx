@@ -13,17 +13,11 @@ const ChildLinking = () => {
   const [code, setCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { linkToParent, isLinked } = useChild();
+  const { linkToParent } = useChild();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useRequireAuth();
-  
-  // Check if already linked and redirect if so
-  if (isLinked) {
-    navigate("/child/chat", { replace: true });
-    return null;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

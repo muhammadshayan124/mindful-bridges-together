@@ -70,7 +70,7 @@ const ParentLinking = ({ onLinked }: ParentLinkingProps) => {
 
   const goToDashboard = () => {
     onLinked();
-    navigate("/parent");
+    navigate("/parent", { replace: true });
   };
 
   if (loading) {
