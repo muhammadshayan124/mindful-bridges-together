@@ -7,18 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Heart, Link2, Users } from "lucide-react";
 import { useChild } from "@/contexts/ChildContext";
 import { useToast } from "@/hooks/use-toast";
-import { useRequireAuth, useRedirectIfLinkedChild } from "@/hooks/useRedirects";
+import { useRequireAuth } from "@/hooks/useRedirects";
 
 const ChildLinking = () => {
   const [code, setCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { linkToParent } = useChild();
+  const { linkToParent, isLinked } = useChild();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useRequireAuth();
-  useRedirectIfLinkedChild("/child/chat");
+  
+  // Check if already linked and redirect if so
+  if (isLinked) {
+    navigate("/child/chat", { replace: true });
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
