@@ -90,19 +90,7 @@ export async function submitJournal(childId: string, text: string, token: string
 }
 
 export async function getGames(token: string): Promise<any[]> {
-  try {
-    return getJSON('/api/games', token);
-  } catch {
-    // Fallback to static games if endpoint doesn't exist
-    return [
-      { name: 'Breathing Buddy', description: 'Practice calm breathing' },
-      { name: 'Worry Warriors', description: 'Fight your worries' },
-      { name: 'Gratitude Garden', description: 'Plant seeds of gratitude' },
-      { name: 'Emotion Detective', description: 'Learn about feelings' },
-      { name: 'Mindful Maze', description: 'Navigate with mindfulness' },
-      { name: 'Coping Castle', description: 'Build coping strategies' }
-    ];
-  }
+  return getJSON('/api/games', token);
 }
 
 export async function ingestGameSession(childId: string, activity: string, delta: number, token: string): Promise<OkOut> {

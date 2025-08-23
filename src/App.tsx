@@ -13,10 +13,36 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import AppWithToast from "./components/AppWithToast";
+import { useEffect } from "react";
+import { health } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
 
 function App() {
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Health check on app start
+    const checkBackendHealth = async () => {
+      try {
+        const isHealthy = await health();
+        if (!isHealthy) {
+          console.warn('Backend unreachable at startup');
+          toast({
+            title: "Backend unreachable",
+            description: "Some features may not work properly. Please try again later.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.warn('Health check failed:', error);
+      }
+    };
+
+    checkBackendHealth();
+  }, [toast]);
+
   return (
     <ThemeProvider defaultTheme="dark" storageKey="mindful-app-theme">
       <QueryClientProvider client={queryClient}>
