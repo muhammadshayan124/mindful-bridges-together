@@ -11,11 +11,10 @@ export const DiagnosticPanel = () => {
   const { signOut } = useAuth();
   const { toast } = useToast();
 
+  const { unlinkChild } = useChild();
+
   const handleUnlink = () => {
-    // Clear local storage and session
-    localStorage.removeItem('child_id');
-    localStorage.removeItem('child_display_name');
-    localStorage.removeItem('child_parent_name');
+    unlinkChild();
     
     toast({
       title: "Unlinked successfully",

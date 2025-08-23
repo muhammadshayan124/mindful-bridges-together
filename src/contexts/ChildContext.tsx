@@ -8,6 +8,7 @@ interface ChildContextType {
   parentName: string | null;
   isLinked: boolean;
   linkToParent: (code: string, displayName: string) => Promise<void>;
+  unlinkChild: () => void;
   loading: boolean;
 }
 
@@ -34,26 +35,30 @@ export const ChildProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLoading(false);
   }, []);
 
-  const generateChildId = () => {
-    return 'child_' + Math.random().toString(36).substr(2, 9);
-  };
-
   const linkToParent = async (code: string, displayName: string) => {
     const token = session?.access_token;
     if (!token) throw new Error('Not authenticated');
     
-    await assignChild(code, displayName, token);
+    const response = await assignChild(code, displayName, token);
     
-    // Generate and set child ID
-    const newChildId = generateChildId();
-    setChildId(newChildId);
+    // Use child_id from backend response
+    setChildId(response.child_id);
     setDisplayName(displayName);
     setParentName("Connected Parent");
     
     // Store in localStorage
-    localStorage.setItem('child_id', newChildId);
+    localStorage.setItem('child_id', response.child_id);
     localStorage.setItem('child_display_name', displayName);
     localStorage.setItem('child_parent_name', "Connected Parent");
+  };
+
+  const unlinkChild = () => {
+    localStorage.removeItem('child_id');
+    localStorage.removeItem('child_display_name');
+    localStorage.removeItem('child_parent_name');
+    setChildId(null);
+    setDisplayName(null);
+    setParentName(null);
   };
 
   const value = {
@@ -62,6 +67,7 @@ export const ChildProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     parentName,
     isLinked: !!childId,
     linkToParent,
+    unlinkChild,
     loading
   };
 

@@ -9,6 +9,7 @@ import { getGames } from "@/lib/api";
 import { Heart, Star, Play, CheckCircle, Trophy, Gamepad2, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
+import { useRedirectIfNoLinkedChild } from "@/hooks/useRedirects";
 
 // Import game components
 import BreathingBuddy from "./games/BreathingBuddy";
@@ -102,6 +103,8 @@ export default function ChildGames() {
   const { session } = useAuth();
   const { startSession, endSession } = useGameTelemetry(childId || '', session?.access_token || '');
   const { toast } = useToast();
+
+  useRedirectIfNoLinkedChild("/child/link");
 
   useEffect(() => {
     const loadGames = async () => {

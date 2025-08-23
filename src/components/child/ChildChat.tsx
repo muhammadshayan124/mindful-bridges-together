@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChild } from "@/contexts/ChildContext";
-import { smartSendChat, clearChatDiscoveryCache } from "@/lib/chatTransport";
-import { API_BASE } from "@/lib/api";
+import { sendChatMessage } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, Bot, Heart, ThumbsUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DiagnosticPanel } from "./DiagnosticPanel";
+import { useRedirectIfNoLinkedChild } from "@/hooks/useRedirects";
+import { ChatTurn } from "@/types";
 
 type Turn = { role: 'user' | 'assistant'; content: string };
 
@@ -22,6 +23,8 @@ export default function ChildChat() {
   const [typing, setTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useRedirectIfNoLinkedChild("/child/link");
 
   const canSend = useMemo(() => input.trim().length > 0 && !!childId && !!session?.access_token, [input, childId, session]);
 
@@ -62,15 +65,19 @@ export default function ChildChat() {
       const token = session?.access_token;
       if (!token) throw new Error('Not authenticated');
       
-      const { replyText } = await smartSendChat(
-        token, childId!, [...turns, userTurn], API_BASE
-      );
-      await typeMessage(replyText);
+      // Convert turns to ChatTurn format for API
+      const chatTurns: ChatTurn[] = [...turns, userTurn].map(turn => ({
+        role: turn.role,
+        content: turn.content
+      }));
+      
+      const response = await sendChatMessage(childId!, chatTurns, token);
+      await typeMessage(response.reply || "I'm here to help! Can you tell me more?");
     } catch (e: any) {
       setError(e.message || String(e));
       toast({
         title: "Chat Error",
-        description: "Couldn't send your message. Please try again.",
+        description: "We couldn't reach the server. Please check your internet or try again.",
         variant: "destructive"
       });
     } finally {
@@ -118,17 +125,6 @@ export default function ChildChat() {
         <summary className="cursor-pointer text-muted-foreground">Connection Status</summary>
         <div className="mt-2">
           <DiagnosticPanel />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { 
-              clearChatDiscoveryCache(); 
-              toast({ title: "Cache cleared", description: "Endpoint cache has been reset" });
-            }}
-            className="w-full"
-          >
-            Clear endpoint cache
-          </Button>
         </div>
       </details>
 

@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Sparkline from "@/components/charts/Sparkline";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAuthToken } from "@/hooks/useAuthToken";
 import { getParentSummary } from "@/lib/api";
 import { ParentOverview } from "@/types";
 import RiskBadge from "@/components/ui/RiskBadge";
@@ -16,8 +15,7 @@ interface ParentDashboardProps {
 }
 
 export default function ParentDashboard({ parentData }: ParentDashboardProps = {}) {
-  const { user } = useAuth();
-  const { token } = useAuthToken();
+  const { session } = useAuth();
   const { toast } = useToast();
   const [overview, setOverview] = useState<ParentOverview | null>(parentData || null);
   const [loading, setLoading] = useState(!parentData);
@@ -25,13 +23,14 @@ export default function ParentDashboard({ parentData }: ParentDashboardProps = {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   const loadOverview = async (showRefreshing = false) => {
-    if (!user?.id || !token) return;
+    const token = session?.access_token;
+    if (!token) return;
     
     if (showRefreshing) setRefreshing(true);
     else setLoading(true);
 
     try {
-      const data = await getParentSummary(user.id, token);
+      const data = await getParentSummary(token);
       setOverview(data);
       setLastUpdate(new Date());
       
@@ -58,7 +57,7 @@ export default function ParentDashboard({ parentData }: ParentDashboardProps = {
     if (!parentData) {
       loadOverview();
     }
-  }, [user, token, parentData]);
+  }, [session, parentData]);
 
   if (loading) {
     return (

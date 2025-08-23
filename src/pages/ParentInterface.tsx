@@ -15,8 +15,12 @@ const ParentInterface = () => {
   const isMobile = useIsMobile();
   const [parentData, setParentData] = useState<ParentOverview | null>(null);
 
+  const handleParentLinked = () => {
+    setParentData({ children: [] });
+  };
+
   if (!parentData) {
-    return <ParentLinking onLinked={setParentData} />;
+    return <ParentLinking onLinked={handleParentLinked} />;
   }
 
   return (
@@ -31,8 +35,8 @@ const ParentInterface = () => {
           )}
           <div className="animate-fade-in-up">
             <Routes>
-          <Route path="/" element={<Navigate to="/parent/dashboard" replace />} />
-           <Route path="/dashboard" element={<ParentDashboard parentData={parentData} />} />
+           <Route path="/" element={<Navigate to="/parent/dashboard" replace />} />
+           <Route path="/dashboard" element={<ParentDashboard />} />
               <Route path="/children" element={<ParentChildren />} />
               <Route path="/reports" element={<ParentReports />} />
               <Route path="/settings" element={<ParentSettings />} />

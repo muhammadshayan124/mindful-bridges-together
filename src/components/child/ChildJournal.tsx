@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { postJSON } from "@/lib/api";
 import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useRedirectIfNoLinkedChild } from "@/hooks/useRedirects";
 import { format } from "date-fns";
 
 const prompts = [
@@ -42,6 +43,8 @@ const ChildJournal = () => {
   const { childId } = useChild();
   const { session } = useAuth();
   const { toast } = useToast();
+
+  useRedirectIfNoLinkedChild("/child/link");
 
   // For now, we'll keep entries in local state since this is a demo
   // In the real app, you'd fetch from the backend API

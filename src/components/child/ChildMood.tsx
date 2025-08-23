@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { submitMood } from "@/lib/api";
 import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useRedirectIfNoLinkedChild } from "@/hooks/useRedirects";
 
 type MoodType = 'very_sad' | 'sad' | 'neutral' | 'happy' | 'very_happy';
 
@@ -33,6 +34,8 @@ const ChildMood = () => {
   const { session } = useAuth();
   const { toast } = useToast();
 
+  useRedirectIfNoLinkedChild("/child/link");
+
   const today = new Date().toLocaleDateString();
 
   const saveMood = async () => {
@@ -45,7 +48,6 @@ const ChildMood = () => {
       await submitMood(
         childId,
         selectedMood,
-        getMoodScore(selectedMood),
         moodNote.trim() || undefined,
         token
       );

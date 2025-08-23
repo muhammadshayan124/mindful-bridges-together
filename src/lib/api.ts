@@ -11,6 +11,20 @@ export function requireToken(token?: string) {
 
 export type Jsonish = Record<string, any>;
 
+// Health check helper
+export async function health(): Promise<boolean> {
+  try {
+    if (!API_BASE) {
+      console.warn('VITE_API_BASE not configured');
+      return false;
+    }
+    const res = await fetch(`${API_BASE}/healthz`);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function request<T>(
   method: 'GET'|'POST'|'HEAD'|'OPTIONS',
   path: string,
@@ -18,6 +32,10 @@ export async function request<T>(
   body?: unknown,
   headers: Record<string,string> = {}
 ): Promise<T> {
+  if (!API_BASE) {
+    throw new Error('Backend API not configured. Please set VITE_API_BASE.');
+  }
+  
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers: {
@@ -27,13 +45,24 @@ export async function request<T>(
     },
     body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined,
   });
-  // Helpful error surfacing
+  
+  // Friendly error messages
   if (!res.ok) {
     let msg: string;
-    try { msg = await res.text(); } catch { msg = `${res.status} ${res.statusText}`; }
+    try { 
+      msg = await res.text(); 
+    } catch { 
+      msg = `${res.status} ${res.statusText}`; 
+    }
+    
+    // Transform common errors to user-friendly messages
+    if (msg.includes('Failed to fetch') || res.status === 0) {
+      throw new Error('We couldn\'t reach the server. Please check your internet or try again.');
+    }
+    
     throw new Error(`HTTP ${res.status}: ${msg}`);
   }
-  // If no JSON, return as any
+  
   const ct = res.headers.get('content-type') || '';
   if (!ct.includes('application/json')) return (await res.text()) as unknown as T;
   return res.json() as Promise<T>;
@@ -52,40 +81,52 @@ export async function ingestChatMessage(childId: string, role: string, content: 
 }
 
 // Child data endpoints  
-export async function submitMood(childId: string, mood: string, moodScore: number, note: string | undefined, token: string): Promise<OkOut> {
-  return postJSON('/api/mood', { child_id: childId, mood, mood_score: moodScore, note }, token);
+export async function submitMood(childId: string, mood: string, note?: string, token?: string): Promise<OkOut> {
+  return postJSON('/api/ingest/mood', { child_id: childId, mood, note }, requireToken(token));
 }
 
 export async function submitJournal(childId: string, text: string, token: string): Promise<OkOut> {
-  return postJSON('/api/journal', { child_id: childId, text }, token);
+  return postJSON('/api/ingest/journal', { child_id: childId, text }, token);
 }
 
 export async function getGames(token: string): Promise<any[]> {
-  return getJSON('/api/games', token);
+  try {
+    return getJSON('/api/games', token);
+  } catch {
+    // Fallback to static games if endpoint doesn't exist
+    return [
+      { name: 'Breathing Buddy', description: 'Practice calm breathing' },
+      { name: 'Worry Warriors', description: 'Fight your worries' },
+      { name: 'Gratitude Garden', description: 'Plant seeds of gratitude' },
+      { name: 'Emotion Detective', description: 'Learn about feelings' },
+      { name: 'Mindful Maze', description: 'Navigate with mindfulness' },
+      { name: 'Coping Castle', description: 'Build coping strategies' }
+    ];
+  }
 }
 
 export async function ingestGameSession(childId: string, activity: string, delta: number, token: string): Promise<OkOut> {
-  return postJSON('/api/game', { child_id: childId, activity, delta }, token);
+  return postJSON('/api/ingest/game', { child_id: childId, activity, delta }, token);
 }
 
 // Parent endpoints
-export async function getParentSummary(parentId: string, token: string): Promise<ParentOverview> {
-  return getJSON(`/api/parent/summary?parent_id=${parentId}`, token);
+export async function getParentSummary(token: string, days = 7): Promise<ParentOverview> {
+  return getJSON(`/api/parent/overview?days=${days}`, token);
 }
 
-export async function getParentChildren(parentId: string, token: string): Promise<ParentChild[]> {
-  return getJSON(`/api/parent/children?parent_id=${parentId}`, token);
+export async function getParentChildren(token: string): Promise<ParentChild[]> {
+  return getJSON('/api/parent/children', token);
 }
 
-export async function getChildTimeline(childId: string, token: string): Promise<TimelineEvent[]> {
-  return getJSON(`/api/parent/child/${childId}/timeline`, token);
+export async function getChildTimeline(childId: string, token: string, days = 7): Promise<TimelineEvent[]> {
+  return getJSON(`/api/parent/child/${childId}/timeline?days=${days}`, token);
 }
 
 // Family linking
-export async function createLinkCode(parentId: string, token: string): Promise<LinkCodeCreateOut> {
-  return postJSON('/api/parent/create-link', { parent_id: parentId }, token);
+export async function createLinkCode(token: string): Promise<LinkCodeCreateOut> {
+  return postJSON('/api/parent/link-code/create', {}, token);
 }
 
-export async function assignChild(code: string, displayName: string, token: string): Promise<OkOut> {
-  return postJSON('/api/assign-child', { code, display_name: displayName }, token);
+export async function assignChild(code: string, displayName: string, token: string): Promise<{ child_id: string; parent_id: string }> {
+  return postJSON('/api/child/link-code/consume', { code, display_name: displayName }, token);
 }

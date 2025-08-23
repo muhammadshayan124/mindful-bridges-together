@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Heart, Link2, Users } from "lucide-react";
 import { useChild } from "@/contexts/ChildContext";
 import { useToast } from "@/hooks/use-toast";
+import { useRequireAuth, useRedirectIfLinkedChild } from "@/hooks/useRedirects";
 
 const ChildLinking = () => {
   const [code, setCode] = useState("");
@@ -13,6 +15,10 @@ const ChildLinking = () => {
   const [loading, setLoading] = useState(false);
   const { linkToParent } = useChild();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useRequireAuth();
+  useRedirectIfLinkedChild("/child/chat");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +31,7 @@ const ChildLinking = () => {
         title: "Successfully linked! 🎉",
         description: "You're now connected with your parent",
       });
+      navigate("/child/chat", { replace: true });
     } catch (error) {
       toast({
         title: "Link failed",
