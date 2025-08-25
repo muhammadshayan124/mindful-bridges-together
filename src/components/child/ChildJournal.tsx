@@ -6,12 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookOpen, Save, Sparkles, Edit3 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-import { useChild } from "@/contexts/ChildContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { postJSON } from "@/lib/api";
-import { OkOut } from "@/types";
+import { submitJournal } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { useRedirectIfNoLinkedChild } from "@/hooks/useRedirects";
 import { format } from "date-fns";
 
 const prompts = [
@@ -40,11 +37,8 @@ const ChildJournal = () => {
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { childId } = useChild();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { toast } = useToast();
-
-  useRedirectIfNoLinkedChild("/child/link");
 
   // For now, we'll keep entries in local state since this is a demo
   // In the real app, you'd fetch from the backend API
@@ -61,7 +55,7 @@ const ChildJournal = () => {
   };
 
   const saveEntry = async () => {
-    if (!childId || !session?.access_token || !journalEntry.trim() || !journalTitle.trim()) {
+    if (!user || !session?.access_token || !journalEntry.trim() || !journalTitle.trim()) {
       toast({
         title: "Missing information",
         description: "Please add both a title and some content to your journal entry",
@@ -74,10 +68,7 @@ const ChildJournal = () => {
       setSaving(true);
       
       // Call the real API endpoint
-      const response = await postJSON<OkOut>('/api/journal', {
-        child_id: childId,
-        text: journalEntry
-      }, session.access_token);
+      const response = await submitJournal(user.id, journalEntry, session.access_token);
 
       // Add to local entries
       const newEntry: JournalEntry = {

@@ -3,10 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useChild } from "@/contexts/ChildContext";
-import { useAuthToken } from "@/hooks/useAuthToken";
-import { postJSON } from "@/lib/api";
-import { ChatTurn, ChatOut } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { sendChatMessage } from "@/lib/api";
+import { ChatTurn } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChatbotPanelProps {
@@ -15,8 +14,7 @@ interface ChatbotPanelProps {
 }
 
 const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
-  const { childId } = useChild();
-  const { token } = useAuthToken();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +29,7 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
   const messagesRef = useRef(messages);
 
   const handleSendMessage = async () => {
-    if (!message.trim() || isLoading || !childId || !token) return;
+    if (!message.trim() || isLoading || !user || !session?.access_token) return;
 
     const userMessage = message.trim();
     const newMessage = {
@@ -54,10 +52,7 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
         { role: 'user', content: userMessage }
       ];
 
-      const response = await postJSON<ChatOut>('/api/chat', {
-        child_id: childId,
-        turns
-      }, token);
+      const response = await sendChatMessage(user.id, turns, session.access_token);
 
       const botResponse = {
         id: Date.now() + 1,

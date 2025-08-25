@@ -4,12 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Heart, Save } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-import { useChild } from "@/contexts/ChildContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { submitMood } from "@/lib/api";
-import { OkOut } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useRedirectIfNoLinkedChild } from "@/hooks/useRedirects";
 
 type MoodType = 'very_sad' | 'sad' | 'neutral' | 'happy' | 'very_happy';
 
@@ -30,23 +27,20 @@ const ChildMood = () => {
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [moodNote, setMoodNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const { childId } = useChild();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { toast } = useToast();
-
-  useRedirectIfNoLinkedChild("/child/link");
 
   const today = new Date().toLocaleDateString();
 
   const saveMood = async () => {
     const token = session?.access_token;
-    if (!childId || !selectedMood || !token) return;
+    if (!user || !selectedMood || !token) return;
 
     try {
       setSaving(true);
       
       await submitMood(
-        childId,
+        user.id,
         selectedMood,
         moodNote.trim() || undefined,
         token

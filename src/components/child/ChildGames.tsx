@@ -3,13 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGameTelemetry } from "@/hooks/useGameTelemetry";
-import { useChild } from "@/contexts/ChildContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { getGames } from "@/lib/api";
 import { Heart, Star, Play, CheckCircle, Trophy, Gamepad2, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
-import { useRedirectIfNoLinkedChild } from "@/hooks/useRedirects";
 
 // Import game components
 import BreathingBuddy from "./games/BreathingBuddy";
@@ -99,12 +96,9 @@ export default function ChildGames() {
   const [completedGames, setCompletedGames] = useState<string[]>([]);
   const [games, setGames] = useState<Game[]>(localGames);
   const [loading, setLoading] = useState(true);
-  const { childId } = useChild();
-  const { session } = useAuth();
-  const { startSession, endSession } = useGameTelemetry(childId || '', session?.access_token || '');
+  const { session, user } = useAuth();
+  const { startSession, endSession } = useGameTelemetry(user?.id || '', session?.access_token || '');
   const { toast } = useToast();
-
-  useRedirectIfNoLinkedChild("/child/link");
 
   useEffect(() => {
     const loadGames = async () => {
@@ -116,29 +110,8 @@ export default function ChildGames() {
         if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
         if (savedCompleted) setCompletedGames(JSON.parse(savedCompleted));
 
-        // Try to load games from backend
-        if (session?.access_token) {
-          const backendGames = await getGames(session.access_token);
-          // Merge backend games with local games, prioritizing backend
-          const mergedGames = [...localGames];
-          backendGames.forEach((bgame: any) => {
-            const existingIndex = mergedGames.findIndex(g => g.id === bgame.id);
-            if (existingIndex >= 0) {
-              mergedGames[existingIndex] = { ...mergedGames[existingIndex], ...bgame };
-            } else {
-              mergedGames.push({
-                id: bgame.id,
-                title: bgame.title || bgame.name,
-                description: bgame.description,
-                category: bgame.category || 'creativity',
-                difficulty: bgame.difficulty || 'medium',
-                estimatedTime: bgame.estimatedTime || '10 minutes',
-                skills: bgame.skills || []
-              });
-            }
-          });
-          setGames(mergedGames);
-        }
+        // Use local games only for now
+        setGames(localGames);
       } catch (error) {
         console.warn('Could not load games from backend, using local games:', error);
         setGames(localGames);
@@ -163,7 +136,7 @@ export default function ChildGames() {
 
   const startGame = (game: Game) => {
     setSelectedGame(game);
-    if (childId) {
+    if (user?.id) {
       startSession();
     }
   };
@@ -173,7 +146,7 @@ export default function ChildGames() {
     setCompletedGames(newCompleted);
     localStorage.setItem('childCompletedGames', JSON.stringify(newCompleted));
     
-    if (childId) {
+    if (user?.id) {
       endSession(gameId, 100);
     }
 
