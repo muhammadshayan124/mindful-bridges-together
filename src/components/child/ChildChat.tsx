@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { sendChatMessage } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { ChatTurn } from "@/types";
 type Turn = { role: 'user' | 'assistant'; content: string };
 
 export default function ChildChat() {
-  const { session, user } = useAuth();
   const { toast } = useToast();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
@@ -21,7 +19,7 @@ export default function ChildChat() {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const canSend = useMemo(() => input.trim().length > 0 && !!user && !!session?.access_token, [input, user, session]);
+  const canSend = useMemo(() => input.trim().length > 0, [input]);
 
   useEffect(() => { 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); 
@@ -57,16 +55,13 @@ export default function ChildChat() {
     setSending(true);
     
     try {
-      const token = session?.access_token;
-      if (!token) throw new Error('Not authenticated');
-      
       // Convert turns to ChatTurn format for API
       const chatTurns: ChatTurn[] = [...turns, userTurn].map(turn => ({
         role: turn.role,
         content: turn.content
       }));
       
-      const response = await sendChatMessage(user!.id, chatTurns, token);
+      const response = await sendChatMessage('demo-user', chatTurns, 'demo-token');
       await typeMessage(response.reply || "I'm here to help! Can you tell me more?");
     } catch (e: any) {
       setError(e.message || String(e));
@@ -103,12 +98,10 @@ export default function ChildChat() {
       </Card>
 
       {/* Diagnostics banner */}
-      {(!user || !session?.access_token || error) && (
+      {error && (
         <Card className="bg-destructive/10 border-destructive">
           <CardContent className="p-4">
             <div className="text-destructive text-sm space-y-1">
-              {!session?.access_token && <div>Missing auth token. Please sign in again.</div>}
-              {!user && <div>Please sign in to continue.</div>}
               {error && <div><strong>Chat error:</strong> {error}</div>}
             </div>
           </CardContent>

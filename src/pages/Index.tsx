@@ -2,15 +2,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Users, LogIn, LogOut } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Heart, Users } from "lucide-react";
 
 const Index = () => {
-  const { user, profile, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 flex items-center justify-center p-4">
@@ -25,28 +19,9 @@ const Index = () => {
           <p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto font-quicksand px-4">
             A safe space for children's mental health, with caring support for families
           </p>
-          
-          {user && profile && (
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <p className="text-sm text-gray-600">
-                Welcome back, {profile.full_name}! You're signed in as a {profile.role}.
-              </p>
-              <Button 
-                onClick={handleSignOut}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </Button>
-            </div>
-          )}
         </div>
 
-        {user && profile ? (
-          // Authenticated user view - show interface cards
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto px-4">
             <Card className="hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 lg:w-20 lg:h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -65,11 +40,8 @@ const Index = () => {
                   <p>🎮 Play calming games</p>
                 </div>
                 <Link to="/child/chat">
-                  <Button 
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl font-quicksand"
-                    disabled={profile.role !== 'child'}
-                  >
-                    {profile.role === 'child' ? 'Start Playing 🌟' : 'Child Access Only'}
+                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl font-quicksand">
+                    Start Playing 🌟
                   </Button>
                 </Link>
               </CardContent>
@@ -93,37 +65,13 @@ const Index = () => {
                   <p>📈 Track progress over time</p>
                 </div>
                 <Link to="/parent/dashboard">
-                  <Button 
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl font-quicksand"
-                    disabled={profile.role !== 'parent'}
-                  >
-                    {profile.role === 'parent' ? 'Access Dashboard 📋' : 'Parent Access Only'}
+                  <Button className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl font-quicksand">
+                    Access Dashboard 📋
                   </Button>
                 </Link>
               </CardContent>
             </Card>
           </div>
-        ) : (
-          // Non-authenticated user view - show sign in options
-          <div className="max-w-md mx-auto">
-            <Card className="hover:shadow-xl transition-all duration-300 border-2 border-blue-200">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold font-poppins text-gray-800">Get Started</CardTitle>
-                <CardDescription className="font-quicksand">
-                  Sign in to access your MindfulBuddy experience
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <Link to="/auth">
-                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl font-quicksand flex items-center justify-center gap-2">
-                    <LogIn className="w-5 h-5" />
-                    Sign In / Create Account
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         <div className="text-center mt-8 lg:mt-12">
           <p className="text-gray-500 text-sm font-quicksand">

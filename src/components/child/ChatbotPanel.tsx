@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
 import { sendChatMessage } from "@/lib/api";
 import { ChatTurn } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +13,6 @@ interface ChatbotPanelProps {
 }
 
 const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
-  const { user, session } = useAuth();
   const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +27,7 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
   const messagesRef = useRef(messages);
 
   const handleSendMessage = async () => {
-    if (!message.trim() || isLoading || !user || !session?.access_token) return;
+    if (!message.trim() || isLoading) return;
 
     const userMessage = message.trim();
     const newMessage = {
@@ -52,7 +50,7 @@ const ChatbotPanel = ({ isOpen, onToggle }: ChatbotPanelProps) => {
         { role: 'user', content: userMessage }
       ];
 
-      const response = await sendChatMessage(user.id, turns, session.access_token);
+      const response = await sendChatMessage('demo-user', turns, 'demo-token');
 
       const botResponse = {
         id: Date.now() + 1,

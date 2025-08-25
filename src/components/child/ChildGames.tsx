@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGameTelemetry } from "@/hooks/useGameTelemetry";
-import { useAuth } from "@/contexts/AuthContext";
 import { Heart, Star, Play, CheckCircle, Trophy, Gamepad2, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
@@ -96,8 +95,7 @@ export default function ChildGames() {
   const [completedGames, setCompletedGames] = useState<string[]>([]);
   const [games, setGames] = useState<Game[]>(localGames);
   const [loading, setLoading] = useState(true);
-  const { session, user } = useAuth();
-  const { startSession, endSession } = useGameTelemetry(user?.id || '', session?.access_token || '');
+  const { startSession, endSession } = useGameTelemetry('', '');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -121,7 +119,7 @@ export default function ChildGames() {
     };
 
     loadGames();
-  }, [session]);
+  }, []);
 
   const toggleFavorite = (gameId: string) => {
     const newFavorites = favorites.includes(gameId) 
@@ -136,9 +134,7 @@ export default function ChildGames() {
 
   const startGame = (game: Game) => {
     setSelectedGame(game);
-    if (user?.id) {
-      startSession();
-    }
+    startSession();
   };
 
   const completeGame = (gameId: string) => {
@@ -146,9 +142,7 @@ export default function ChildGames() {
     setCompletedGames(newCompleted);
     localStorage.setItem('childCompletedGames', JSON.stringify(newCompleted));
     
-    if (user?.id) {
-      endSession(gameId, 100);
-    }
+    endSession(gameId, 100);
 
     toast({
       title: "🎉 Game Complete!",

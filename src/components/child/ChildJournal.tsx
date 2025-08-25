@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookOpen, Save, Sparkles, Edit3 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-import { useAuth } from "@/contexts/AuthContext";
 import { submitJournal } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -37,7 +36,6 @@ const ChildJournal = () => {
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { session, user } = useAuth();
   const { toast } = useToast();
 
   // For now, we'll keep entries in local state since this is a demo
@@ -55,7 +53,7 @@ const ChildJournal = () => {
   };
 
   const saveEntry = async () => {
-    if (!user || !session?.access_token || !journalEntry.trim() || !journalTitle.trim()) {
+    if (!journalEntry.trim() || !journalTitle.trim()) {
       toast({
         title: "Missing information",
         description: "Please add both a title and some content to your journal entry",
@@ -68,7 +66,7 @@ const ChildJournal = () => {
       setSaving(true);
       
       // Call the real API endpoint
-      const response = await submitJournal(user.id, journalEntry, session.access_token);
+      const response = await submitJournal('demo-user', journalEntry, 'demo-token');
 
       // Add to local entries
       const newEntry: JournalEntry = {

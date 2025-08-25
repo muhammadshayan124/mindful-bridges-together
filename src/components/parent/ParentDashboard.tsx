@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Sparkline from "@/components/charts/Sparkline";
-import { useAuth } from "@/contexts/AuthContext";
 import { getParentSummary } from "@/lib/api";
 import { ParentOverview } from "@/types";
 import RiskBadge from "@/components/ui/RiskBadge";
@@ -15,7 +14,6 @@ interface ParentDashboardProps {
 }
 
 export default function ParentDashboard({ parentData }: ParentDashboardProps = {}) {
-  const { session } = useAuth();
   const { toast } = useToast();
   const [overview, setOverview] = useState<ParentOverview | null>(parentData || null);
   const [loading, setLoading] = useState(!parentData);
@@ -23,8 +21,7 @@ export default function ParentDashboard({ parentData }: ParentDashboardProps = {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   const loadOverview = async (showRefreshing = false) => {
-    const token = session?.access_token;
-    if (!token) return;
+    const token = 'demo-token';
     
     if (showRefreshing) setRefreshing(true);
     else setLoading(true);
@@ -57,7 +54,7 @@ export default function ParentDashboard({ parentData }: ParentDashboardProps = {
     if (!parentData) {
       loadOverview();
     }
-  }, [session, parentData]);
+  }, [parentData]);
 
   if (loading) {
     return (

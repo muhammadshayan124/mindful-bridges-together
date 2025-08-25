@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/sidebar";
 import { BarChart3, Users, FileText, Settings, Heart, Home, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const menuItems = [
@@ -26,10 +25,9 @@ const menuItems = [
 const ParentSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { signOut, profile } = useAuth();
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    window.location.href = '/';
   };
 
   return (
@@ -42,7 +40,7 @@ const ParentSidebar = () => {
               MindfulBuddy
             </h2>
             <p className="text-sm text-blue-100 font-inter truncate">
-              {profile ? `Welcome, ${profile.full_name}` : 'Parent Dashboard'}
+              Parent Dashboard
             </p>
           </div>
         </Link>

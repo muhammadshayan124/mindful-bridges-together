@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Heart, Save } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-import { useAuth } from "@/contexts/AuthContext";
 import { submitMood } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,23 +26,21 @@ const ChildMood = () => {
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [moodNote, setMoodNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const { session, user } = useAuth();
   const { toast } = useToast();
 
   const today = new Date().toLocaleDateString();
 
   const saveMood = async () => {
-    const token = session?.access_token;
-    if (!user || !selectedMood || !token) return;
+    if (!selectedMood) return;
 
     try {
       setSaving(true);
       
       await submitMood(
-        user.id,
+        'demo-user',
         selectedMood,
         moodNote.trim() || undefined,
-        token
+        'demo-token'
       );
 
       toast({

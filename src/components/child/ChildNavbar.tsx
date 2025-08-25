@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { Heart, MessageCircle, Smile, BookOpen, Gamepad2, Menu, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -18,7 +17,6 @@ const ChildNavbar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const { signOut, profile } = useAuth();
   
   const navItems = [
     { path: "/child/chat", label: "Chat", icon: MessageCircle },
@@ -27,8 +25,9 @@ const ChildNavbar = () => {
     { path: "/child/games", label: "Games", icon: Gamepad2 },
   ];
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    // Navigate to home
+    window.location.href = '/';
     setIsOpen(false);
   };
 
@@ -68,11 +67,9 @@ const ChildNavbar = () => {
               <span className="text-3xl font-bold bg-gradient-to-r from-mindful-accent via-mindful-send-button to-mindful-mint bg-clip-text text-transparent font-quicksand">
                 MindfulBuddy
               </span>
-              {profile && (
-                <p className="text-sm text-purple-500 dark:text-purple-400 font-quicksand truncate">
-                  Hi, {profile.full_name}! ✨
-                </p>
-              )}
+              <p className="text-sm text-purple-500 dark:text-purple-400 font-quicksand truncate">
+                Hi there! ✨
+              </p>
             </div>
           </Link>
           
